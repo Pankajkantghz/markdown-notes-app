@@ -1,5 +1,21 @@
-node_modules/
-dist/
-.env
-.env.*
-!.env.example
+# Keep this repository server-only (plus this ignore policy).
+/*
+!/server/
+!/.gitignore
+
+# Keep local secrets and environment-specific files out of Git.
+/server/.env
+/server/.env.*
+!/server/.env.example
+
+# Ignore generated and machine-specific server files.
+/server/node_modules/
+/server/dist/
+/server/coverage/
+/server/*.tsbuildinfo
+/server/**/*.tsbuildinfo
+/server/**/*.log
+/server/.DS_Store
+/server/.idea/
+/server/.vscode/
+/client

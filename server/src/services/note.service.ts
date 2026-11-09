@@ -7,7 +7,13 @@ import type {
 } from "../types/grammar.types.js";
 
 import { db } from "../prisma/db.js";
-import type { CreateNoteDTO, NoteResponse } from "../types/note.types.js";
+import type {
+  CreateNoteDTO,
+  NoteResponse,
+  RenderedNoteResponse,
+} from "../types/note.types.js";
+import { marked } from "marked";
+import { safeMarkdownRenderer } from "../utils/markdown.js";
 
 interface LanguageToolApiResponse {
   matches: LanguageToolMatch[];
@@ -28,6 +34,9 @@ export const checkGrammarWithLanguageTool = async (
         accept: "application/json",
         "Content-Type": "application/x-www-form-urlencoded",
       },
+      timeout: 15_000,
+      maxBodyLength: 1_000_000,
+      maxContentLength: 1_000_000,
     });
 
     const matches: GrammarMatch[] = response.data.matches.map((match) => ({
@@ -45,11 +54,11 @@ export const checkGrammarWithLanguageTool = async (
       errorsCount: matches.length,
     };
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error("LanguageTool API error:", error.response?.data);
-    } else {
-      console.error("Unexpected grammar check error:", error);
-    }
+    console.error(
+      axios.isAxiosError(error)
+        ? "LanguageTool request failed"
+        : "Unexpected grammar check failure",
+    );
 
     throw new Error("Failed to check grammar");
   }
@@ -67,15 +76,33 @@ export const createNoteService = async (
   return newNote as NoteResponse;
 };
 
+export const deleteNoteService = async (
+  id: number,
+): Promise<NoteResponse | null> => {
+  const deletedNote = await db.orm.public.Note.where({ id }).delete();
+  return deletedNote as NoteResponse | null;
+};
+
+export const updateNoteService = async (
+  id: number,
+  title: string,
+  content: string,
+): Promise<NoteResponse | null> => {
+  const updatedNote = await db.orm.public.Note.where({ id }).update({
+    title,
+    content,
+  });
+  return updatedNote as NoteResponse | null;
+};
+
 export const getAllNotesService = async (
   page: number = 1,
-  limit: number = 10,
+  limit: number = 12,
 ) => {
   const skip = (page - 1) * limit;
 
   const [notes, totalNotes] = await Promise.all([
-    db.orm.public.Note
-      .orderBy((note: any) => note.createdAt.desc())
+    db.orm.public.Note.orderBy((note: any) => note.createdAt.desc())
       .limit(limit)
       .offset(skip)
       .all(),
@@ -93,4 +120,17 @@ export const getAllNotesService = async (
       totalPages: Math.ceil(totalNotes.total / limit),
     },
   };
+};
+
+export const getNoteHtmlService = async (
+  id: number,
+): Promise<RenderedNoteResponse | null> => {
+  const note = await db.orm.public.Note.first({ id });
+  if (!note) return null;
+
+  const htmlContent = await marked.parse(note.content || "", {
+    renderer: safeMarkdownRenderer(),
+  });
+
+  return { ...(note as NoteResponse), htmlContent };
 };

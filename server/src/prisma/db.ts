@@ -6,7 +6,10 @@ import contractJson from "./contract.json" with { type: "json" };
 
 export const contract = contractFromJson<Contract>(contractJson);
 
-export const db:any = postgres({
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) throw new Error("DATABASE_URL must be set in the server environment");
+
+export const db: any = postgres({
   contract,
-  url: process.env["DATABASE_URL"]!,
+  url: databaseUrl,
 });

@@ -13,6 +13,10 @@ export interface NoteResponse {
   updatedAt: Date;
 }
 
+export interface RenderedNoteResponse extends NoteResponse {
+  htmlContent: string;
+}
+
 export interface UpdateNoteDTO {
   title?: string;
   content?: string;
