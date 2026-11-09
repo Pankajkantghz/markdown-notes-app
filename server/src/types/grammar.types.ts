@@ -1,3 +1,10 @@
+export interface GrammarMatch {
+  message: string;
+  offset: number;
+  length: number;
+  suggestions: string[];
+}
+
 export interface LanguageToolMatch {
   message: string;
   offset: number;
@@ -5,13 +12,6 @@ export interface LanguageToolMatch {
   replacements: {
     value: string;
   }[];
-}
-
-export interface GrammarMatch {
-  message: string;
-  offset: number;
-  length: number;
-  suggestions: string[];
 }
 
 export interface GrammarCheckResponse {

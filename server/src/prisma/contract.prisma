@@ -1,0 +1,9 @@
+// use prisma-8
+
+model Note {
+  id        Int      @id(map: "Note_pkey") @default(autoincrement())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @onCreate(now()) @onUpdate(now())
+}

@@ -7,21 +7,27 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.ts"
+    "start": "node dist/server.js",
+    "seed": "tsx src/prisma/seed.ts",
+    "contract:emit": "prisma contract emit"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.32.1",
   "dependencies": {
+    "@prisma/orm-postgres": "8.0.0-rc.23",
     "axios": "^1.21.0",
     "cors": "^2.8.6",
     "dotenv": "^18.0.9",
     "express": "^5.3.0"
   },
   "devDependencies": {
+    "@prisma/cli-engine": "0.9.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/node": "^26.6.6",
+    "prisma": "8.0.0-rc.33",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
