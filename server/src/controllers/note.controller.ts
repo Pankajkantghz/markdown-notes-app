@@ -168,7 +168,7 @@ export const getAllNotes = async (req: Request, res: Response) => {
     const requestedPage =
       req.query.page === undefined ? 1 : positiveInteger(req.query.page);
     const requestedLimit =
-      req.query.limit === undefined ? 12 : positiveInteger(req.query.limit);
+      req.query.limit === undefined ? 9 : positiveInteger(req.query.limit);
     if (requestedPage === null || requestedLimit === null) {
       return res.status(400).json({
         success: false,
