@@ -10,14 +10,22 @@ Express and TypeScript REST API for the Markdown Notes app. It stores notes in P
 
 ## Setup
 
-From this directory, install dependencies and create a local environment file:
+From this directory, install dependencies and create `server/.env`:
 
 ```sh
 pnpm install
-cp .env.example .env
 ```
 
-Set `DATABASE_URL` in `.env` to your PostgreSQL connection string. Keep `.env` private and use a database account with access only to this app's database. The default server address is `127.0.0.1:5000`; `CLIENT_ORIGINS` defaults to `http://localhost:5173`.
+Set the database connection and server settings in `.env`:
+
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DATABASE"
+PORT=5000
+HOST=127.0.0.1
+CLIENT_ORIGINS=http://localhost:5173
+```
+
+Keep `.env` private and use a database account with access only to this app's database. The default server address is `127.0.0.1:5000`; `CLIENT_ORIGINS` defaults to `http://localhost:5173`.
 
 Start the development server:
 
@@ -33,6 +41,10 @@ pnpm start
 ```
 
 `pnpm seed` adds the sample notes to the configured database.
+
+## Swagger documentation
+
+With the API running, open `http://127.0.0.1:5000/docs` for interactive Swagger UI or `http://127.0.0.1:5000/openapi.json` for the OpenAPI document. The specification is maintained in `src/docs/openapi.ts` and includes the health, notes, and grammar endpoints.
 
 ## Endpoints
 

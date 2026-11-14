@@ -6,9 +6,13 @@ A local Markdown note-taking app for writing, importing, checking, saving, and r
 
 ```mermaid
 flowchart LR
-  User --> UI[React + Vite client]
-  UI -->|JSON over REST| API[Express API]
-  UI -->|Read selected .md/.txt file| UI
+  User --> Router[React Router]
+  Router --> Layout[Content layout]
+  Layout --> Pages[Home, library, note reader]
+  Pages --> NotesFeature[Notes feature: components, API, types]
+  NotesFeature -->|JSON over REST| API[Express API]
+  Pages -->|Read selected .md/.txt file in browser| Pages
+  API --> Docs[OpenAPI spec + Swagger UI]
   API --> Routes[Note routes]
   Routes --> Controllers[Controllers]
   Controllers --> Services[Note services]
@@ -19,6 +23,12 @@ flowchart LR
 ```
 
 The client contains the editor, Markdown preview, grammar suggestions, library, and rendered note page. When a user selects a Markdown or text file, the browser reads it and sends its text to the API as JSON. The Express API validates requests and routes them through controllers to note and grammar services. PostgreSQL stores note content; LanguageTool supplies grammar matches and replacement suggestions. The API safely renders stored Markdown for the note reader, and the live client preview sanitizes rendered HTML with DOMPurify.
+
+### Frontend architecture
+
+`client/src/app` owns the router, application providers, and route pages. `components/layouts` contains the shared navigation, footer, content wrapper, and page heading used by the editor and library. `components/ui` holds reusable interface primitives such as the shared button with consistent variants and sizes. The notes feature keeps reusable editor, toolbar, preview, and workspace components beside its API functions and TypeScript types; routes consume them through the `features/notes` barrel. `lib/api-client.ts` is the shared Axios client. Routes compose these feature pieces and own page-level state and navigation.
+
+The editor and preview share note content state. Saving and library actions use the notes API client, while selecting a file is handled locally by the browser. The note reader requests server-rendered HTML; the editor preview renders locally and sanitizes its HTML before display.
 
 ## Features
 
@@ -38,6 +48,7 @@ The client contains the editor, Markdown preview, grammar suggestions, library, 
 | Markdown | Marked for rendering; DOMPurify for client-preview sanitization |
 | Notifications and icons | Sonner, Lucide React |
 | API | Node.js, Express, Axios |
+| API docs | OpenAPI 3.0, Swagger UI |
 | Database | PostgreSQL 15 or newer, Prisma ORM for PostgreSQL |
 | Grammar | LanguageTool-compatible HTTP service |
 | Package management | pnpm (server package metadata specifies pnpm 10.32.1) |
@@ -120,13 +131,26 @@ All note endpoints use the `/notes` prefix. JSON request and response bodies use
 | `GET` | `/notes/:id/html` | Return a note with safely rendered `htmlContent`. |
 | `DELETE` | `/notes/:id` | Delete a note. |
 
+Interactive API documentation is available at [`/docs`](http://127.0.0.1:5000/docs); the raw OpenAPI document is at [`/openapi.json`](http://127.0.0.1:5000/openapi.json). Swagger UI is served by the API.
+
 File selection is handled in the browser: the client reads the selected `.md` or `.txt` file and saves its text through `POST /notes`. The API accepts Markdown text as JSON; it does not currently expose a separate multipart file-upload endpoint.
 
 ## Project layout
 
 ```text
-client/   React interface and Markdown editor
-server/   Express API, PostgreSQL access, grammar and Markdown services
+client/
+  src/app/                  Router, providers, and route pages
+  src/components/layouts/   Navigation, footer, page layout, and headings
+  src/components/ui/        Reusable button and interface primitives
+  src/features/notes/       Notes UI, API client, and types
+  src/lib/                  Shared API utilities
+server/
+  src/routes/               HTTP route declarations
+  src/controllers/          Request validation and responses
+  src/services/             Database, grammar, and Markdown work
+  src/docs/                 OpenAPI specification
+  src/prisma/               PostgreSQL client and seed data
+  src/utils/                Server configuration and middleware
 ```
 
 ## Development checks

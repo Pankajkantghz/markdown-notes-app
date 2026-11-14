@@ -1,17 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Calendar, FileText, Pencil, Trash2 } from "lucide-react";
-import { axiosClient } from "../lib/axiosClinet";
-import Footer from "./Footer";
-import { toast } from "sonner";
 
-interface NoteDetailData {
-  id: number;
-  title: string;
-  content: string;
-  htmlContent: string;
-  updatedAt: string;
-}
+
+import { toast } from "sonner";
+import { deleteNoteAPI, getNoteHtml } from "@/features/notes";
+import type { NoteDetailData } from "@/features/notes";
+import { Button } from "@/components/ui";
 
 const markdownStyles = `
   prose prose-red max-w-none 
@@ -34,11 +29,8 @@ export default function NoteReaderView() {
   useEffect(() => {
     if (!id) return;
 
-    axiosClient
-      .get(`/notes/${id}/html`)
-      .then((response) => {
-        setNote(response.data.data);
-      })
+    getNoteHtml(id)
+      .then(setNote)
       .catch((err) => {
         console.error("Failed to fetch note HTML:", err);
         setError("Could not load the note. It may have been deleted.");
@@ -48,7 +40,7 @@ export default function NoteReaderView() {
   const handleDelete = async () => {
     if (!id) return;
     try {
-      await axiosClient.delete(`/notes/${id}`);
+      await deleteNoteAPI(id);
       toast.success("Note deleted.");
       navigate("/library");
     } catch (err) {
@@ -63,12 +55,12 @@ export default function NoteReaderView() {
         <p className="text-slate-600 dark:text-slate-300 font-medium">
           {error || "Note not found."}
         </p>
-        <button
+        <Button
+          size="sm"
           onClick={() => navigate("/library")}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700 transition"
         >
           Back to Library
-        </button>
+        </Button>
       </div>
     );
   }
@@ -87,29 +79,33 @@ export default function NoteReaderView() {
       <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 lg:p-8 flex-1">
         {/* Top Navigation & Actions */}
         <div className="mb-6 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => navigate("/library")}
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 transition hover:text-indigo-600 dark:hover:text-indigo-400"
+            className="hover:text-indigo-600 dark:hover:text-indigo-400"
           >
             <ArrowLeft size={18} />
             Back to Library
-          </button>
+          </Button>
 
           <div className="flex gap-2">
-            <button
+            <Button
+              variant="subtle"
+              size="sm"
               onClick={() => navigate("/", { state: { note } })}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 transition hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
             >
               <Pencil size={16} />
               Edit Note
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
               onClick={handleDelete}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 transition hover:bg-red-50 dark:hover:bg-red-950/50"
             >
               <Trash2 size={16} />
               Delete Note
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -139,7 +135,7 @@ export default function NoteReaderView() {
         </article>
       </div>
 
-      <Footer />
+  
     </main>
   );
 }

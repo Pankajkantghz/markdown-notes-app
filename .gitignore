@@ -1,4 +1,4 @@
-# Keep this repository server-only (plus this ignore policy).
+# Keep the application source in the client and server directories.
 /*
 !/server/
 !/.gitignore
@@ -19,7 +19,6 @@
 /server/.DS_Store
 /server/.idea/
 /server/.vscode/
-/client1
 .codex
 .aws
 .agents

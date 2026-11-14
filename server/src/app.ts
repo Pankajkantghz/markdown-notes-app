@@ -3,14 +3,18 @@ import cors from "cors";
 import noteRoutes from "./routes/note.routes.js";
 import { CLIENT_ORIGINS } from "./utils/config.js";
 import { createRateLimit } from "./utils/rateLimit.js";
+import swaggerUi from "swagger-ui-express";
+import { openApiDocument } from "./docs/openapi.js";
 
 const app: Express = express();
 
 app.disable("x-powered-by");
-app.use((_req, res, next) => {
+app.use((req, res, next) => {
+  const contentSecurityPolicy = req.path.startsWith("/docs")
+    ? "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+    : "default-src 'none'; frame-ancestors 'none'; base-uri 'none'";
   res.set({
-    "Content-Security-Policy":
-      "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
+    "Content-Security-Policy": contentSecurityPolicy,
     "Cache-Control": "no-store",
     "Referrer-Policy": "no-referrer",
     "X-Content-Type-Options": "nosniff",
@@ -33,6 +37,8 @@ app.use("/notes", createRateLimit({ windowMs: 60_000, max: 120 }));
 app.use("/notes/grammar", createRateLimit({ windowMs: 60_000, max: 20 }));
 app.use(express.json({ limit: "1mb", strict: true }));
 
+app.get("/openapi.json", (_req, res) => res.json(openApiDocument));
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 app.use("/notes", noteRoutes);
 
 app.get("/", (_req, res) => {
