@@ -9,8 +9,7 @@ import {
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import type { GrammarMatch } from "../types";
-import { Button } from "@/components/ui";
-import { Panel, PanelHeader } from "@/components/ui";
+import { Button, Panel, PanelHeader } from "@/components/ui";
 
 type Tab = "preview" | "grammar";
 

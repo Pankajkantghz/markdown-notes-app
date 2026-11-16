@@ -9,13 +9,18 @@ const htmlEntities: Record<string, string> = {
 };
 
 export const escapeHtml = (value: string): string =>
-  value.replace(/[&<>"']/g, (character) => htmlEntities[character] ?? character);
+  value.replace(
+    /[&<>"']/g,
+    (character) => htmlEntities[character] ?? character,
+  );
 
 export const safeHref = (href: string): boolean => {
   if (href.startsWith("#")) return true;
   try {
     const protocol = new URL(href, "https://markdown-notes.invalid").protocol;
-    return protocol === "http:" || protocol === "https:" || protocol === "mailto:";
+    return (
+      protocol === "http:" || protocol === "https:" || protocol === "mailto:"
+    );
   } catch {
     return false;
   }

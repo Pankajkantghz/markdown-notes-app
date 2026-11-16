@@ -1,9 +1,10 @@
 
-import axios from 'axios';
+import axios from "axios";
 
 export const axiosClient = axios.create({
-  baseURL: 'http://localhost:5000/',
+  // Defaults to same-origin so production can route /notes through a proxy.
+  baseURL: import.meta.env.VITE_API_URL || "/",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });

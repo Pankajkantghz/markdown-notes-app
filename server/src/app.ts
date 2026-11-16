@@ -1,78 +1,24 @@
-import express, { type ErrorRequestHandler, type Express } from "express";
-import cors from "cors";
-import noteRoutes from "./routes/note.routes.js";
-import { CLIENT_ORIGINS } from "./utils/config.js";
-import { createRateLimit } from "./utils/rateLimit.js";
-import swaggerUi from "swagger-ui-express";
-import { openApiDocument } from "./docs/openapi.js";
+import express from "express";
+import { createServer } from "node:http";
+import config from "./config/index.js";
+import loaders from "./loaders/index.js";
 
-const app: Express = express();
+async function startServer() {
+  const app = express();
+  const server = createServer(app);
 
-app.disable("x-powered-by");
-app.use((req, res, next) => {
-  const contentSecurityPolicy = req.path.startsWith("/docs")
-    ? "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'"
-    : "default-src 'none'; frame-ancestors 'none'; base-uri 'none'";
-  res.set({
-    "Content-Security-Policy": contentSecurityPolicy,
-    "Cache-Control": "no-store",
-    "Referrer-Policy": "no-referrer",
-    "X-Content-Type-Options": "nosniff",
-    "X-Frame-Options": "DENY",
-  });
-  next();
-});
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || CLIENT_ORIGINS.includes(origin)) callback(null, true);
-      else callback(new Error("Origin not allowed"));
-    },
-    methods: ["GET", "POST", "PATCH", "DELETE"],
-    allowedHeaders: ["Content-Type"],
-    maxAge: 600,
-  }),
-);
-app.use("/notes", createRateLimit({ windowMs: 60_000, max: 120 }));
-app.use("/notes/grammar", createRateLimit({ windowMs: 60_000, max: 20 }));
-app.use(express.json({ limit: "1mb", strict: true }));
-
-app.get("/openapi.json", (_req, res) => res.json(openApiDocument));
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
-app.use("/notes", noteRoutes);
-
-app.get("/", (_req, res) => {
-  res.status(200).send("API is running.");
-});
-
-const handleError: ErrorRequestHandler = (error: any, _req, res, _next) => {
-  let code = Number(error?.status) || 500;
-
-  if (error instanceof Error && error.message === "Origin not allowed") {
-    code = 403;
+  try {
+    await loaders({ expressApp: app });
+    server.listen(config.port, config.host, () => {
+      console.log(`Server running at http://${config.host}:${config.port}`);
+    });
+  } catch (error) {
+    console.error(
+      "Unable to start the API. Check the database connection and server configuration.",
+      error,
+    );
+    process.exit(1);
   }
+}
 
-  if (![400, 403, 413].includes(code)) {
-    code = 500;
-  }
-
-  if (code === 500) {
-    console.error("Unhandled API error:", error);
-  }
-
-  const messages: Record<number, string> = {
-    400: "Invalid request body",
-    403: "Origin not allowed",
-    413: "Request body is too large",
-    500: "Internal server error",
-  };
-
-  res.status(code).json({
-    success: false,
-    error: messages[code],
-  });
-};
-
-app.use(handleError);
-
-export default app;
+void startServer();

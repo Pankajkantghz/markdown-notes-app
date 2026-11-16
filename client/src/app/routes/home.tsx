@@ -66,12 +66,8 @@ export default function HomeRoute() {
     try {
       setMatches(await checkGrammarAPI(content));
       setApplied([]);
-    } catch (error: any) {
-      toast.error(
-        error.response?.data?.error ||
-          error.message ||
-          "Failed to check grammar. Please try again.",
-      );
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to check grammar. Please try again.");
     } finally {
       setChecking(false);
     }

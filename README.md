@@ -145,12 +145,14 @@ client/
   src/features/notes/       Notes UI, API client, and types
   src/lib/                  Shared API utilities
 server/
-  src/routes/               HTTP route declarations
-  src/controllers/          Request validation and responses
+  src/app.ts                HTTP entrypoint and application startup
+  src/api/                  API router, routes, and controllers
+  src/config/               Environment configuration
+  src/loaders/              Database and Express startup
   src/services/             Database, grammar, and Markdown work
   src/docs/                 OpenAPI specification
   src/prisma/               PostgreSQL client and seed data
-  src/utils/                Server configuration and middleware
+  src/utils/                Markdown helpers and rate limiting
 ```
 
 ## Development checks

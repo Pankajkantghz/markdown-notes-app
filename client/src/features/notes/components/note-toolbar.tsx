@@ -1,6 +1,5 @@
 import { Loader2, Save } from "lucide-react";
-import { Button } from "@/components/ui";
-import { Input } from "@/components/ui";
+import { Button, Input } from "@/components/ui";
 
 interface NoteToolbarProps {
   title: string;

@@ -42,6 +42,10 @@ pnpm start
 
 `pnpm seed` adds the sample notes to the configured database.
 
+## Structure
+
+`src/app.ts` creates the Express app, runs the loaders, and starts the HTTP listener. `src/loaders/` initializes PostgreSQL and Express middleware. API routes and controllers live in `src/api/`, database and grammar operations in `src/services/`, environment values in `src/config/`, and the OpenAPI document in `src/docs/`.
+
 ## Swagger documentation
 
 With the API running, open `http://127.0.0.1:5000/docs` for interactive Swagger UI or `http://127.0.0.1:5000/openapi.json` for the OpenAPI document. The specification is maintained in `src/docs/openapi.ts` and includes the health, notes, and grammar endpoints.

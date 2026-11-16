@@ -6,7 +6,7 @@ import {
   getAllNotesService,
   getNoteHtmlService,
   updateNoteService,
-} from "../services/note.service.js";
+} from "../../services/note.service.js";
 
 const MAX_TITLE_LENGTH = 160;
 const MAX_NOTE_LENGTH = 200_000;

@@ -8,11 +8,10 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layouts";
-import { Button } from "@/components/ui";
-import { Input } from "@/components/ui";
+import { Button, Input } from "@/components/ui";
 import { getNotes, deleteNoteAPI } from "@/features/notes";
 import type { Note } from "@/features/notes";
 export default function LibraryRoute() {
@@ -33,25 +32,32 @@ export default function LibraryRoute() {
 
   // Fetch notes from backend on mount or when currentPage changes
   useEffect(() => {
+    let active = true;
     getNotes(currentPage, limit)
       .then((data) => {
+        if (!active) return;
         setNotes(data.data);
         setTotalPages(data.pagination.totalPages || 1);
         setLoading(false);
       })
       .catch((error) => {
+        if (!active) return;
         console.error("Failed to fetch notes:", error);
         toast.error("Could not load notes.");
         setLoading(false);
       });
+    return () => { active = false; };
   }, [currentPage]);
 
   // Delete notes
-  const handleDelete = async (e: React.MouseEvent, id: number | string) => {
-    e.stopPropagation();
+  const handleDelete = async (id: number | string) => {
     try {
       await deleteNoteAPI(id);
-      setNotes((prevNotes) => prevNotes.filter((note) => note.id !== id));
+      const remainingNotes = notes.filter((note) => note.id !== id);
+      setNotes(remainingNotes);
+      if (remainingNotes.length === 0 && currentPage > 1) {
+        changePage(currentPage - 1);
+      }
       toast.success("Note deleted.");
     } catch (error) {
       console.error("Failed to delete note:", error);
@@ -83,21 +89,15 @@ export default function LibraryRoute() {
 
       {/* Search and Note Count */}
       <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-sm">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
-          />
-
-          <Input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search your notes..."
-            aria-label="Search notes"
-            className="pl-10"
-          />
-        </div>
+        <Input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search your notes..."
+          aria-label="Search notes"
+          leadingIcon={<Search size={16} />}
+          wrapperClassName="sm:max-w-sm"
+        />
 
         <span className="text-sm text-slate-500 dark:text-slate-400">
           <span className="font-medium text-slate-900 dark:text-white">
@@ -137,30 +137,34 @@ export default function LibraryRoute() {
           {filteredNotes.map((note) => (
             <article
               key={note.id}
-              onClick={() => navigate(`/notes/${note.id}`)}
-              className="group flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-200 dark:hover:border-indigo-900 hover:shadow-md cursor-pointer"
+              className="group flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-200 dark:hover:border-indigo-900 hover:shadow-md"
             >
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="rounded-lg bg-indigo-50 dark:bg-indigo-950/50 p-2.5 text-indigo-600 dark:text-indigo-400">
-                    <FileText size={19} />
+              <Link
+                to={`/notes/${note.id}`}
+                className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              >
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="rounded-lg bg-indigo-50 dark:bg-indigo-950/50 p-2.5 text-indigo-600 dark:text-indigo-400">
+                      <FileText size={19} />
+                    </div>
+
+                    <h2 className="truncate text-base font-semibold text-slate-900 dark:text-white">
+                      {note.title}
+                    </h2>
                   </div>
 
-                  <h2 className="truncate text-base font-semibold text-slate-900 dark:text-white">
-                    {note.title}
-                  </h2>
+                  <span className="shrink-0 rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Markdown
+                  </span>
                 </div>
 
-                <span className="shrink-0 rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Markdown
-                </span>
-              </div>
-
-              <div className="min-h-28 flex-1 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 p-4">
-                <pre className="line-clamp-5 whitespace-pre-wrap break-words font-mono text-xs leading-6 text-slate-600 dark:text-slate-300">
-                  {note.content}
-                </pre>
-              </div>
+                <div className="min-h-28 flex-1 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 p-4">
+                  <pre className="line-clamp-5 whitespace-pre-wrap break-words font-mono text-xs leading-6 text-slate-600 dark:text-slate-300">
+                    {note.content}
+                  </pre>
+                </div>
+              </Link>
 
               <div className="mt-5 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
                 <span className="text-xs text-slate-500 dark:text-slate-400">
@@ -181,10 +185,7 @@ export default function LibraryRoute() {
                     variant="ghost"
                     size="icon"
                     aria-label={`Edit ${note.title}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate("/", { state: { note } });
-                    }}
+                    onClick={() => navigate("/", { state: { note } })}
                   >
                     <Pencil size={16} />
                   </Button>
@@ -193,7 +194,7 @@ export default function LibraryRoute() {
                     variant="danger"
                     size="icon"
                     aria-label={`Delete ${note.title}`}
-                    onClick={(e) => handleDelete(e, note.id!)}
+                    onClick={() => handleDelete(note.id!)}
                   >
                     <Trash2 size={16} />
                   </Button>
