@@ -1,11 +1,14 @@
-# Markdown Notes
+# Mireth
 
-A local Markdown note-taking app for writing, importing, checking, saving, and reading notes.
+Give your thoughts a place to grow. Mireth is a local Markdown note-taking app for writing, importing, checking, saving, and reading notes.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
+  User --> Google[Google Identity Services]
+  Google --> Auth[Express auth routes]
+  Auth --> Users[(User accounts)]
   User --> Router[React Router]
   Router --> Layout[Content layout]
   Layout --> Pages[Home, library, note reader]
@@ -16,7 +19,7 @@ flowchart LR
   API --> Routes[Note routes]
   Routes --> Controllers[Controllers]
   Controllers --> Services[Note services]
-  Services --> DB[(PostgreSQL)]
+  Services --> DB[(PostgreSQL: users and owned notes)]
   Services -->|Grammar text| LT[LanguageTool on localhost:8010]
   Services -->|Render Markdown safely| HTML[HTML response]
   HTML --> UI
@@ -33,6 +36,7 @@ The editor and preview share note content state. Saving and library actions use 
 ## Features
 
 - Write notes in Markdown and preview the rendered result.
+- Sign in with Google and keep each account's notes private to that user.
 - Import `.md` and `.txt` files from the editor.
 - Check spelling and grammar with LanguageTool, view underlined matches, and apply suggested replacements.
 - Save, edit, search, paginate, read, and delete notes.
@@ -64,17 +68,7 @@ The editor and preview share note content state. Saving and library actions use 
 
 ### 1. Configure the database
 
-Create a PostgreSQL database. If it does not have the `Note` table described by [`server/src/prisma/contract.prisma`](server/src/prisma/contract.prisma), connect to the database and create it:
-
-```sql
-CREATE TABLE "Note" (
-  id SERIAL PRIMARY KEY,
-  title TEXT NOT NULL,
-  content TEXT NOT NULL,
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-```
+Create an empty PostgreSQL database, then apply the checked-in migrations from the `server` directory. This creates the user and note tables and their ownership relation.
 
 Create `server/.env` with your local database connection and development server settings:
 
@@ -83,15 +77,17 @@ DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DATABASE"
 PORT=5000
 HOST=127.0.0.1
 CLIENT_ORIGINS=http://localhost:5173
+GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
 ```
 
-Keep `.env` local; it is excluded from Git. Start PostgreSQL and a LanguageTool service listening on port `8010` before using the corresponding features.
+Set the same Google **Web application** client ID in `client/.env` as `VITE_GOOGLE_CLIENT_ID`. For local Google Identity Services sign-in, authorize `http://localhost:5173` as a JavaScript origin; this flow does not use a redirect URI or client secret. Keep both `.env` files local; they are excluded from Git. Start PostgreSQL and a LanguageTool service listening on port `8010` before using the corresponding features.
 
 In a terminal, install and start the API:
 
 ```sh
 cd server
 pnpm install
+pnpm prisma db migrate
 pnpm dev
 ```
 
@@ -119,6 +115,8 @@ pnpm seed
 ```
 
 ## API
+
+Google sign-in is handled by `POST /auth/google`; `GET /auth/me` returns the verified current user. The client sends the Google ID token as a bearer credential. All note and grammar routes require that credential, and note queries are scoped to the signed-in user's account. See [`server/README.md`](server/README.md) for the auth flow and route details.
 
 All note endpoints use the `/notes` prefix. JSON request and response bodies use the `application/json` content type.
 

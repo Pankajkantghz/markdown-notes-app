@@ -10,13 +10,14 @@ const errorResponse = {
 export const openApiDocument = {
   openapi: "3.0.3",
   info: {
-    title: "Markdown Notes API",
+    title: "Mireth API",
     version: "1.0.0",
     description: "REST API for notes, Markdown rendering, and grammar suggestions.",
   },
   servers: [{ url: "/", description: "Current server" }],
   tags: [
     { name: "Health", description: "Service status" },
+    { name: "Auth", description: "Google sign-in and current user" },
     { name: "Notes", description: "Create, list, update, read, and delete notes" },
     { name: "Grammar", description: "Check text with LanguageTool" },
   ],
@@ -24,10 +25,32 @@ export const openApiDocument = {
     "/": {
       get: {
         tags: ["Health"],
+        security: [],
         summary: "Check API status",
         responses: {
           "200": { description: "API is running", content: { "text/plain": { schema: { type: "string", example: "API is running." } } } },
         },
+      },
+    },
+    "/auth/google": {
+      post: {
+        tags: ["Auth"],
+        security: [],
+        summary: "Sign in with Google Identity Services",
+        requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["credential"], properties: { credential: { type: "string", description: "Google ID token credential" } } } } } },
+        responses: {
+          "200": { description: "Verified user profile" },
+          "400": errorResponse,
+          "401": errorResponse,
+          "503": errorResponse,
+        },
+      },
+    },
+    "/auth/me": {
+      get: {
+        tags: ["Auth"],
+        summary: "Get the signed-in user",
+        responses: { "200": { description: "Current user profile" }, "401": errorResponse },
       },
     },
     "/notes": {
@@ -129,11 +152,17 @@ export const openApiDocument = {
       },
     },
   },
+  security: [{ bearerAuth: [] }],
   components: {
+    securitySchemes: { bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },
     parameters: {
       NoteId: { in: "path", name: "id", required: true, schema: { type: "integer", minimum: 1 } },
     },
     schemas: {
+      AuthUser: { type: "object", required: ["id", "email", "name"], properties: {
+        id: { type: "integer" }, email: { type: "string", format: "email" },
+        name: { type: "string" }, avatar: { type: "string", nullable: true },
+      } },
       Note: { type: "object", required: ["id", "title", "content", "createdAt", "updatedAt"], properties: {
         id: { type: "integer", example: 1 },
         title: { type: "string", maxLength: 160, example: "Meeting notes" },

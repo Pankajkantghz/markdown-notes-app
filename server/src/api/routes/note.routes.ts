@@ -7,9 +7,11 @@ import {
   getNoteHtml,
   updateNote,
 } from "../controllers/note.controller.js";
+import { requireAuth } from "../middleware/require-auth.js";
 
 const router: ExpressRouter = Router();
 
+router.use(requireAuth);
 router.post("/grammar", checkGrammar);
 router.post("/", createNote);
 router.get("/", getAllNotes);

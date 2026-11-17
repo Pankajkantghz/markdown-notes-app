@@ -1,6 +1,6 @@
-# Markdown Notes API
+# Mireth API
 
-Express and TypeScript REST API for the Markdown Notes app. It stores notes in PostgreSQL, checks grammar through a local LanguageTool service, and returns rendered Markdown as HTML.
+Express and TypeScript REST API for Mireth. It stores notes in PostgreSQL, checks grammar through a local LanguageTool service, and returns rendered Markdown as HTML.
 
 ## Requirements
 
@@ -23,6 +23,13 @@ DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DATABASE"
 PORT=5000
 HOST=127.0.0.1
 CLIENT_ORIGINS=http://localhost:5173
+GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
+```
+
+Set `GOOGLE_CLIENT_ID` to a Google **Web application** client ID. Use the same ID as `VITE_GOOGLE_CLIENT_ID` in `client/.env`; authorize the frontend origin (for local development, `http://localhost:5173`) in Google Cloud Console. This Identity Services credential flow does not need a redirect URI or client secret. Apply the database schema before starting the API:
+
+```sh
+pnpm prisma db migrate
 ```
 
 Keep `.env` private and use a database account with access only to this app's database. The default server address is `127.0.0.1:5000`; `CLIENT_ORIGINS` defaults to `http://localhost:5173`.
@@ -40,7 +47,7 @@ pnpm build
 pnpm start
 ```
 
-`pnpm seed` adds the sample notes to the configured database.
+`pnpm seed` adds sample notes without an owner, so they are not visible to signed-in users. Create notes after signing in to have them associated with your account.
 
 ## Structure
 
@@ -55,6 +62,8 @@ With the API running, open `http://127.0.0.1:5000/docs` for interactive Swagger 
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/` | API health message |
+| `POST` | `/auth/google` | Verify a Google Identity Services credential and sign in or create the user |
+| `GET` | `/auth/me` | Return the signed-in user |
 | `POST` | `/notes/grammar` | Check `{ "text": "..." }` with LanguageTool |
 | `POST` | `/notes` | Create a note with `{ "title": "...", "content": "..." }` |
 | `GET` | `/notes?page=1&limit=12` | List notes with pagination |
@@ -62,10 +71,12 @@ With the API running, open `http://127.0.0.1:5000/docs` for interactive Swagger 
 | `PATCH` | `/notes/:id` | Update a note's title and Markdown content |
 | `DELETE` | `/notes/:id` | Delete a note |
 
+All `/notes` endpoints require `Authorization: Bearer <Google ID token>`. The client obtains this credential from Google Identity Services. The API verifies the token's signature and audience, identifies the account by Google's stable `sub`, and scopes every note query to that user's database ID. Google ID tokens expire, so users may need to sign in again. Set `GOOGLE_CLIENT_ID` to the same web client ID in both `client/.env` (`VITE_GOOGLE_CLIENT_ID`) and `server/.env`; no client secret is used by this ID-token flow.
+
 The API limits JSON request bodies to 1 MB, note titles to 160 characters, note content to 200,000 characters, grammar requests to 50,000 characters, and list pages to 100 notes. It allows 120 requests per minute per client IP, with grammar checks limited to 20 per minute. Rate-limit state is in memory and applies to one server process.
 
 ## Security notes
 
 The API binds to loopback by default, limits request sizes, validates IDs and pagination, restricts browser origins, and escapes raw HTML in rendered Markdown. Its queries use the Prisma ORM; request values are passed as ORM values rather than concatenated into SQL. Do not add raw SQL string interpolation for request data.
 
-This app does not have user authentication or per-user note access. CORS is a browser policy, not authentication. Keep the API on a trusted local machine. Do not bind it to a public interface or expose it to the internet until authentication, HTTPS, and production-grade shared rate limiting are configured. The built-in limiter is process-local and is not a substitute for an edge or shared-store limiter in a multi-instance deployment.
+Existing notes remain unowned after the ownership migration and are intentionally hidden from signed-in users. New notes are owned by their creator. CORS is a browser policy, not authentication. Keep the API on a trusted local machine until HTTPS and production-grade shared rate limiting are configured. The built-in limiter is process-local and is not a substitute for an edge or shared-store limiter in a multi-instance deployment.

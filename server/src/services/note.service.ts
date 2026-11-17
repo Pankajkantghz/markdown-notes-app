@@ -65,12 +65,14 @@ export const checkGrammarWithLanguageTool = async (
 };
 
 export const createNoteService = async (
+  ownerId: number,
   data: CreateNoteDTO,
 ): Promise<NoteResponse> => {
   const { title, content } = data;
   const newNote = await db.orm.public.Note.create({
     title,
     content: content || "",
+    ownerId,
   });
 
   return newNote as NoteResponse;
@@ -78,17 +80,19 @@ export const createNoteService = async (
 
 export const deleteNoteService = async (
   id: number,
+  ownerId: number,
 ): Promise<NoteResponse | null> => {
-  const deletedNote = await db.orm.public.Note.where({ id }).delete();
+  const deletedNote = await db.orm.public.Note.where({ id, ownerId }).delete();
   return deletedNote as NoteResponse | null;
 };
 
 export const updateNoteService = async (
   id: number,
+  ownerId: number,
   title: string,
   content: string,
 ): Promise<NoteResponse | null> => {
-  const updatedNote = await db.orm.public.Note.where({ id }).update({
+  const updatedNote = await db.orm.public.Note.where({ id, ownerId }).update({
     title,
     content,
   });
@@ -96,19 +100,19 @@ export const updateNoteService = async (
 };
 
 export const getAllNotesService = async (
+  ownerId: number,
   page: number = 1,
   limit: number = 12,
 ) => {
   const skip = (page - 1) * limit;
 
   const [notes, totalNotes] = await Promise.all([
-    db.orm.public.Note.orderBy((note: any) => note.createdAt.desc())
+    db.orm.public.Note.where({ ownerId })
+      .orderBy((note: any) => note.createdAt.desc())
       .limit(limit)
       .offset(skip)
       .all(),
-    db.orm.public.Note.aggregate((aggregate: any) => ({
-      total: aggregate.count(),
-    })),
+    db.orm.public.Note.where({ ownerId }).aggregate((aggregate: any) => ({ total: aggregate.count() })),
   ]);
 
   return {
@@ -124,8 +128,9 @@ export const getAllNotesService = async (
 
 export const getNoteHtmlService = async (
   id: number,
+  ownerId: number,
 ): Promise<RenderedNoteResponse | null> => {
-  const note = await db.orm.public.Note.first({ id });
+  const note = await db.orm.public.Note.first({ id, ownerId });
   if (!note) return null;
 
   const htmlContent = await marked.parse(note.content || "", {

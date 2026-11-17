@@ -25,4 +25,5 @@ export default {
   host: process.env.HOST?.trim() || "127.0.0.1",
   port,
   clientOrigins,
+  googleClientId: process.env.GOOGLE_CLIENT_ID?.trim() || "",
 };

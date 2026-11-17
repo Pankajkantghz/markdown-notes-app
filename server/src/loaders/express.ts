@@ -17,6 +17,10 @@ export default ({ app }: { app: Express }) => {
     res.set("Cache-Control", "no-store");
     next();
   });
+  app.use("/auth", (_req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+  });
 
   // CORS
   app.use(
@@ -27,12 +31,13 @@ export default ({ app }: { app: Express }) => {
         else callback(new Error("Origin not allowed"));
       },
       methods: ["GET", "POST", "PATCH", "DELETE"],
-      allowedHeaders: ["Content-Type"],
+      allowedHeaders: ["Authorization", "Content-Type"],
       maxAge: 600,
     }),
   );
 
   // Rate Limiters & Body Parsing
+  app.use("/auth", createRateLimit({ windowMs: 60_000, max: 20 }));
   app.use("/notes", createRateLimit({ windowMs: 60_000, max: 120 }));
   app.use("/notes/grammar", createRateLimit({ windowMs: 60_000, max: 20 }));
   app.use(express.json({ limit: "1mb", strict: true }));

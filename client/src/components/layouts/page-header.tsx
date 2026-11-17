@@ -13,7 +13,7 @@ export function PageHeader({ title, description, action }: PageHeaderProps) {
       <div>
         <div className="mb-2 flex items-center gap-2 text-sm font-medium text-indigo-600 dark:text-indigo-400">
           <FileText size={16} />
-          <span>Markdown Workspace</span>
+          <span>Mireth workspace</span>
         </div>
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
           {title}

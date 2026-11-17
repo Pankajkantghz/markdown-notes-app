@@ -1,9 +1,11 @@
-import { FileText, Library, House, Sun, Moon } from "lucide-react";
+import { BookOpen, Library, House, Sun, Moon, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { Button } from "@/components/ui";
+import { useAuth } from "@/auth/auth-context";
 
 export default function Navbar() {
+  const { user, signOut } = useAuth();
   const [isDark, setIsDark] = useState(() => {
     return (
       localStorage.getItem("theme") === "dark" ||
@@ -34,12 +36,12 @@ export default function Navbar() {
       <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="rounded-lg bg-indigo-600 p-2 text-white shadow-sm">
-            <FileText size={19} />
+          <div className="rounded-xl bg-indigo-600 p-2 text-white shadow-sm">
+            <BookOpen size={19} />
           </div>
 
           <span className="text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
-            Markdown Notes
+            mireth
           </span>
         </Link>
 
@@ -57,6 +59,10 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-3">
+          {user && <span className="hidden text-sm text-slate-600 dark:text-slate-300 sm:inline">{user.name}</span>}
+          <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sign out" title="Sign out">
+            <LogOut size={18} />
+          </Button>
           <Button
             variant="secondary"
             size="icon"

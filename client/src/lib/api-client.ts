@@ -1,4 +1,3 @@
-
 import axios from "axios";
 
 export const axiosClient = axios.create({
@@ -8,3 +7,19 @@ export const axiosClient = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+axiosClient.interceptors.request.use((request) => {
+  const token = sessionStorage.getItem("mireth.google.credential");
+  if (token) request.headers.Authorization = `Bearer ${token}`;
+  return request;
+});
+
+axiosClient.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      window.dispatchEvent(new Event("mireth:unauthorized"));
+    }
+    return Promise.reject(error);
+  },
+);

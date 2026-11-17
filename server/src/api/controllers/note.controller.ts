@@ -87,7 +87,7 @@ export const createNote = async (req: Request, res: Response) => {
       });
     }
 
-    const newNote = await createNoteService({
+    const newNote = await createNoteService(req.authUser!.id, {
       title: title.trim(),
       content: content ?? "",
     });
@@ -113,7 +113,7 @@ export const deleteNote = async (req: Request, res: Response) => {
   }
 
   try {
-    const deletedNote = await deleteNoteService(id);
+    const deletedNote = await deleteNoteService(id, req.authUser!.id);
     if (!deletedNote) {
       return res.status(404).json({ success: false, error: "Note not found" });
     }
@@ -152,7 +152,12 @@ export const updateNote = async (req: Request, res: Response) => {
   }
 
   try {
-    const updatedNote = await updateNoteService(id, title.trim(), content);
+    const updatedNote = await updateNoteService(
+      id,
+      req.authUser!.id,
+      title.trim(),
+      content,
+    );
     if (!updatedNote)
       return res.status(404).json({ success: false, error: "Note not found" });
     return res.status(200).json({ success: true, data: updatedNote });
@@ -183,7 +188,7 @@ export const getAllNotes = async (req: Request, res: Response) => {
         .json({ success: false, error: "Page is too large" });
     }
 
-    const result = await getAllNotesService(page, limit);
+    const result = await getAllNotesService(req.authUser!.id, page, limit);
 
     return res.status(200).json({
       success: true,
@@ -212,7 +217,7 @@ export const getNoteHtml = async (
       });
     }
 
-    const noteData = await getNoteHtmlService(id);
+    const noteData = await getNoteHtmlService(id, req.authUser!.id);
 
     if (!noteData) {
       return res.status(404).json({

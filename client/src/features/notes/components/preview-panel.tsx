@@ -43,7 +43,7 @@ export function PreviewPanel({
   );
 
   const defaultMarkdown = `
-# Welcome to Markdown Workspace
+# Welcome to Mireth
 
 Upload a markdown file or start typing your notes here!
 

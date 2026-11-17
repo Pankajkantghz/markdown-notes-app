@@ -1,6 +1,8 @@
 // src/app/router.tsx
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
 import { ContentLayout } from "@/components/layouts";
+import { AuthProvider, useAuth } from "@/auth/auth-context";
+import LoginRoute from "@/auth/login-route";
 import HomeRoute from "./routes/home";
 import LibraryRoute from "./routes/library";
 import NoteRoute from "./routes/note";
@@ -8,17 +10,32 @@ import NoteRoute from "./routes/note";
 export const AppRouter = () => {
   return (
     <BrowserRouter>
-      <ContentLayout>
+      <AuthProvider>
         <Routes>
-          <Route path="/" element={<HomeRoute />} />
-          <Route path="/library" element={<LibraryRoute />} />
-          <Route path="/notes/:id" element={<NoteRoute />} />
-          <Route path="*" element={<NotFoundRoute />} />
+          <Route path="/login" element={<LoginRoute />} />
+          <Route path="*" element={<AuthenticatedRoutes />} />
         </Routes>
-      </ContentLayout>
+      </AuthProvider>
     </BrowserRouter>
   );
 };
+
+function AuthenticatedRoutes() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  if (loading) return <main className="flex min-h-screen items-center justify-center text-slate-500" role="status">Loading Mireth…</main>;
+  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
+  return (
+    <ContentLayout>
+      <Routes>
+        <Route path="/" element={<HomeRoute />} />
+        <Route path="/library" element={<LibraryRoute />} />
+        <Route path="/notes/:id" element={<NoteRoute />} />
+        <Route path="*" element={<NotFoundRoute />} />
+      </Routes>
+    </ContentLayout>
+  );
+}
 
 function NotFoundRoute() {
   return (
