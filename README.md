@@ -1,6 +1,12 @@
 # Mireth
 
-Give your thoughts a place to grow. Mireth is a local Markdown note-taking app for writing, importing, checking, saving, and reading notes.
+Give your thoughts a place to grow. Mireth is a Markdown note-taking app for writing, importing, checking, saving, and reading notes.
+
+## Live app
+
+[Open Mireth](https://markdown-notes-app-chi-ruby.vercel.app/)
+
+The app opens to Google sign-in. After signing in, users can create and manage their own private Markdown notes. Note content is only available to authenticated users.
 
 ## Architecture
 
