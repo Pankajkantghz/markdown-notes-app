@@ -191,9 +191,9 @@ GitHub Actions runs client lint/build, server build, and migration integrity che
 
 Connect the GitHub repository to Vercel for the client and Render for the API, and enable deploys from the chosen production branch. Keep deployments behind the CI checks and set each provider's build, start, and environment settings from its dashboard. Neon hosts PostgreSQL; use its pooled runtime URL for the API and a migration-capable URL for release migrations. Configure the exact deployed frontend origin in both Google OAuth and the API's `CLIENT_ORIGINS`.
 
-- Serve the client and API over HTTPS. Prefer the same site for both; for separate origins, configure `SESSION_COOKIE_SAME_SITE=none` and ensure the browser permits the cookie.
+- Serve the client and API over HTTPS. The Vercel rewrites in `client/vercel.json` proxy API requests through the frontend origin; use `SESSION_COOKIE_SAME_SITE=lax` for the session cookie.
 - Set `NODE_ENV=production`, a PostgreSQL `DATABASE_URL` with `sslmode=verify-full` and the provider's trusted CA when required, the matching Google Web client ID, HTTPS `CLIENT_ORIGINS`, `SAPLING_API_KEY`, and the correct `TRUST_PROXY` hop count. Use a least-privilege database account.
-- Set `VITE_GOOGLE_CLIENT_ID` to the same ID and `VITE_API_URL` to the API origin (or leave it unset when a same-origin proxy routes API paths). Add only the deployed frontend origin to Google Authorized JavaScript origins.
+- Set `VITE_GOOGLE_CLIENT_ID` to the same ID and leave `VITE_API_URL` unset on Vercel so requests use the same-origin API proxy. Add the deployed frontend origin to Google Authorized JavaScript origins.
 - Apply migrations as a release step with `cd server && pnpm db:migrate`; do not run schema migrations concurrently from each application instance. Set `MIGRATION_DATABASE_URL` to a separate migration-only credential in deployment and keep the API's `DATABASE_URL` restricted to runtime data operations.
 - Monitor `/health/live` and `/health/ready`. Configure automated encrypted PostgreSQL backups and regularly test restore procedures, alerting, log retention, and rollback.
 - Grammar requests send submitted text to Sapling. Review its data handling terms and disclose this processing to users.

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/auth/:path*",
+      "has": [{ "type": "header", "key": "X-Mireth-Request", "value": "1" }],
+      "destination": "https://mireth-xyj0.onrender.com/auth/:path*"
+    },
+    {
+      "source": "/notes/:path*",
+      "has": [{ "type": "header", "key": "X-Mireth-Request", "value": "1" }],
+      "destination": "https://mireth-xyj0.onrender.com/notes/:path*"
+    },
+    {
+      "source": "/health/:path*",
+      "has": [{ "type": "header", "key": "X-Mireth-Request", "value": "1" }],
+      "destination": "https://mireth-xyj0.onrender.com/health/:path*"
+    }
+  ]
+}
