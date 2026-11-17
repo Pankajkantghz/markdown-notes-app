@@ -1,10 +1,10 @@
 import type { NextFunction, Request, Response } from "express";
-import type { TokenPayload } from "google-auth-library";
 import config from "../../config/index.js";
 import {
-  findUserByGoogleId,
-  verifyGoogleCredential,
-} from "../../services/auth.service.js";
+  clearSessionCookie,
+  findSessionUser,
+  readSessionCookie,
+} from "../../services/session.service.js";
 
 export interface AuthenticatedUser {
   id: number;
@@ -21,43 +21,55 @@ declare global {
   }
 }
 
+export function requireTrustedRequest(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const origin = req.get("origin");
+  const serverOrigin = `${req.protocol}://${req.get("host")}`;
+  if (
+    req.get("x-mireth-request") !== "1" ||
+    (origin &&
+      !config.clientOrigins.includes(origin) &&
+      origin !== serverOrigin)
+  ) {
+    return res
+      .status(403)
+      .json({ success: false, error: "Request origin is not allowed" });
+  }
+  return next();
+}
+
 export async function requireAuth(
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
-  if (!config.googleClientId) {
+  if (req.get("x-mireth-request") !== "1") {
     return res
-      .status(503)
-      .json({ success: false, error: "Google sign-in is not configured" });
+      .status(403)
+      .json({ success: false, error: "Request origin is not allowed" });
   }
-  const credential = /^Bearer\s+(.+)$/i.exec(
-    req.get("authorization") || "",
-  )?.[1];
-  if (!credential) {
+  const origin = req.get("origin");
+  const serverOrigin = `${req.protocol}://${req.get("host")}`;
+  if (
+    origin &&
+    !config.clientOrigins.includes(origin) &&
+    origin !== serverOrigin
+  ) {
+    return res
+      .status(403)
+      .json({ success: false, error: "Request origin is not allowed" });
+  }
+  const token = readSessionCookie(req.headers.cookie);
+  const user = await findSessionUser(token);
+  if (!user) {
+    clearSessionCookie(res);
     return res
       .status(401)
-      .json({ success: false, error: "Sign in is required" });
+      .json({ success: false, error: "Sign in to continue" });
   }
-
-  let payload: TokenPayload;
-  try {
-    payload = await verifyGoogleCredential(credential);
-  } catch (error) {
-    return res
-      .status(401)
-      .json({ success: false, error: "Google sign-in expired or invalid" });
-  }
-  const user = await findUserByGoogleId(payload.sub!);
-  if (!user)
-    return res
-      .status(401)
-      .json({ success: false, error: "Sign in again to continue" });
-  req.authUser = {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    avatar: user.avatar,
-  };
+  req.authUser = user as AuthenticatedUser;
   return next();
 }

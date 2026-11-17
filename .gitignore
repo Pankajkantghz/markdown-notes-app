@@ -3,6 +3,8 @@
 !/server/
 !/.gitignore
 !/client/
+!/.github/
+!/.github/**
 
 # Keep local secrets and environment-specific files out of Git.
 /server/.env

@@ -6,30 +6,35 @@ Give your thoughts a place to grow. Mireth is a local Markdown note-taking app f
 
 ```mermaid
 flowchart LR
-  User --> Google[Google Identity Services]
-  Google --> Auth[Express auth routes]
-  Auth --> Users[(User accounts)]
-  User --> Router[React Router]
-  Router --> Layout[Content layout]
-  Layout --> Pages[Home, library, note reader]
-  Pages --> NotesFeature[Notes feature: components, API, types]
-  NotesFeature -->|JSON over REST| API[Express API]
-  Pages -->|Read selected .md/.txt file in browser| Pages
-  API --> Docs[OpenAPI spec + Swagger UI]
-  API --> Routes[Note routes]
+  User --> Login[React login page]
+  Login -->|ID credential| GIS[Google Identity Services]
+  GIS -->|Credential| Auth[Express auth routes]
+  Auth -->|Verify credential| Google[Google identity verification]
+  Auth -->|Create or revoke session| DB[(PostgreSQL)]
+  Auth -->|HTTP-only session cookie| Client[React application]
+  User --> Router[React Router and auth provider]
+  Client --> Router
+  Router --> Pages[Home, library, note reader]
+  Pages --> Feature[Notes feature: UI, API, types]
+  Feature -->|JSON + session cookie| API[Express API]
+  API --> Middleware[Origin, session, and rate-limit middleware]
+  Middleware --> Routes[Auth and note routes]
   Routes --> Controllers[Controllers]
-  Controllers --> Services[Note services]
-  Services --> DB[(PostgreSQL: users and owned notes)]
-  Services -->|Grammar text| LT[LanguageTool on localhost:8010]
-  Services -->|Render Markdown safely| HTML[HTML response]
-  HTML --> UI
+  Controllers --> Services[Note and session services]
+  Services -->|Users, sessions, owned notes, rate limits| DB
+  Services -->|Grammar text| LT[Configured LanguageTool service]
+  Services -->|Render saved Markdown| HTML[Safe HTML response]
+  HTML --> Pages
+  Pages -->|Read selected .md/.txt locally| Pages
+  API --> Health[Health endpoints]
+  API --> Docs[OpenAPI + Swagger UI]
 ```
 
-The client contains the editor, Markdown preview, grammar suggestions, library, and rendered note page. When a user selects a Markdown or text file, the browser reads it and sends its text to the API as JSON. The Express API validates requests and routes them through controllers to note and grammar services. PostgreSQL stores note content; LanguageTool supplies grammar matches and replacement suggestions. The API safely renders stored Markdown for the note reader, and the live client preview sanitizes rendered HTML with DOMPurify.
+The client contains the branded, theme-aware Google sign-in page, editor, Markdown preview, grammar suggestions, library, and note reader. Google Identity Services returns an ID credential to the client, which exchanges it with the API for a revocable HTTP-only session cookie. Authenticated note requests use that cookie; the API scopes reads and writes to the signed-in user. PostgreSQL stores users, sessions, owned notes, and shared rate-limit counters. Grammar text is sent to the configured LanguageTool service. The API safely renders saved Markdown for the reader, while the live preview sanitizes rendered HTML with DOMPurify. File selection stays in the browser before note text is sent to the API.
 
 ### Frontend architecture
 
-`client/src/app` owns the router, application providers, and route pages. `components/layouts` contains the shared navigation, footer, content wrapper, and page heading used by the editor and library. `components/ui` holds reusable interface primitives such as the shared button with consistent variants and sizes. The notes feature keeps reusable editor, toolbar, preview, and workspace components beside its API functions and TypeScript types; routes consume them through the `features/notes` barrel. `lib/api-client.ts` is the shared Axios client. Routes compose these feature pieces and own page-level state and navigation.
+`client/src/app` owns the router, application providers, and route pages. The auth module contains the branded login route and provider that exchanges Google credentials for a session and loads the current user. `components/layouts` contains the shared navigation, footer, content wrapper, and page heading used by the editor and library. `components/ui` holds reusable interface primitives such as the shared button with consistent variants and sizes. The notes feature keeps reusable editor, toolbar, preview, and workspace components beside its API functions and TypeScript types; routes consume them through the `features/notes` barrel. `lib/api-client.ts` is the shared Axios client and sends credentials with API requests. Routes compose these feature pieces and own page-level state and navigation.
 
 The editor and preview share note content state. Saving and library actions use the notes API client, while selecting a file is handled locally by the browser. The note reader requests server-rendered HTML; the editor preview renders locally and sanitizes its HTML before display.
 
@@ -37,6 +42,7 @@ The editor and preview share note content state. Saving and library actions use 
 
 - Write notes in Markdown and preview the rendered result.
 - Sign in with Google and keep each account's notes private to that user.
+- Use a responsive, theme-aware sign-in page styled with Mireth's brand.
 - Import `.md` and `.txt` files from the editor.
 - Check spelling and grammar with LanguageTool, view underlined matches, and apply suggested replacements.
 - Save, edit, search, paginate, read, and delete notes.
@@ -74,20 +80,21 @@ Create `server/.env` with your local database connection and development server 
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DATABASE"
-PORT=5000
-HOST=127.0.0.1
 CLIENT_ORIGINS=http://localhost:5173
 GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
+LANGUAGETOOL_URL=http://localhost:8010
+SESSION_COOKIE_SAME_SITE=lax
+TRUST_PROXY=0
 ```
 
-Set the same Google **Web application** client ID in `client/.env` as `VITE_GOOGLE_CLIENT_ID`. For local Google Identity Services sign-in, authorize `http://localhost:5173` as a JavaScript origin; this flow does not use a redirect URI or client secret. Keep both `.env` files local; they are excluded from Git. Start PostgreSQL and a LanguageTool service listening on port `8010` before using the corresponding features.
+Set the same Google **Web application** client ID in `client/.env` as `VITE_GOOGLE_CLIENT_ID`. For local Google Identity Services sign-in, authorize `http://localhost:5173` as a JavaScript origin; this flow does not use a redirect URI or client secret. Keep both `.env` files local; they are excluded from Git. `LANGUAGETOOL_URL` points the API to LanguageTool; locally, start the service at `http://localhost:8010` before using grammar checks.
 
 In a terminal, install and start the API:
 
 ```sh
 cd server
 pnpm install
-pnpm prisma db migrate
+pnpm db:migrate
 pnpm dev
 ```
 
@@ -116,7 +123,7 @@ pnpm seed
 
 ## API
 
-Google sign-in is handled by `POST /auth/google`; `GET /auth/me` returns the verified current user. The client sends the Google ID token as a bearer credential. All note and grammar routes require that credential, and note queries are scoped to the signed-in user's account. See [`server/README.md`](server/README.md) for the auth flow and route details.
+Google sign-in is handled by `POST /auth/google`; `GET /auth/me` returns the current user and `POST /auth/logout` revokes the session. The client exchanges Google's ID token for a revocable, HTTP-only session cookie. All note and grammar routes require that session, and note queries are scoped to the signed-in user's account. Rate limits are stored in PostgreSQL and shared across API instances.
 
 All note endpoints use the `/notes` prefix. JSON request and response bodies use the `application/json` content type.
 
@@ -170,7 +177,27 @@ cd server
 pnpm build
 ```
 
-This project is intended for local learning. The API has no authentication or per-user note access; keep it on a trusted local machine rather than exposing it publicly.
+## Production deployment
+
+The repository includes production-oriented session cookies, database-backed rate limits, strict origin checks, readiness probes, graceful shutdown, and structured request logs. Deployment still depends on the operator's infrastructure and must be verified before public launch.
+
+GitHub Actions runs client lint/build, server build, and migration integrity checks for pushes and pull requests.
+
+Connect the GitHub repository to Vercel for the client and Render for the API, and enable deploys from the chosen production branch. Keep deployments behind the CI checks and set each provider's build, start, and environment settings from its dashboard. Neon hosts PostgreSQL; use its pooled runtime URL for the API and a migration-capable URL for release migrations. Configure the exact deployed frontend origin in both Google OAuth and the API's `CLIENT_ORIGINS`.
+
+- Serve the client and API over HTTPS. Prefer the same site for both; for separate origins, configure `SESSION_COOKIE_SAME_SITE=none` and ensure the browser permits the cookie.
+- Set `NODE_ENV=production`, a PostgreSQL `DATABASE_URL` with `sslmode=verify-full` and the provider's trusted CA when required, the matching Google Web client ID, HTTPS `CLIENT_ORIGINS`, an HTTPS `LANGUAGETOOL_URL`, and the correct `TRUST_PROXY` hop count. Use a least-privilege database account.
+- Set `VITE_GOOGLE_CLIENT_ID` to the same ID and `VITE_API_URL` to the API origin (or leave it unset when a same-origin proxy routes API paths). Add only the deployed frontend origin to Google Authorized JavaScript origins.
+- Apply migrations as a release step with `cd server && pnpm db:migrate`; do not run schema migrations concurrently from each application instance. Set `MIGRATION_DATABASE_URL` to a separate migration-only credential in deployment and keep the API's `DATABASE_URL` restricted to runtime data operations.
+- Monitor `/health/live` and `/health/ready`. Configure automated encrypted PostgreSQL backups and regularly test restore procedures, alerting, log retention, and rollback.
+- Deploy a private LanguageTool service or document and disclose the configured provider: grammar requests send the submitted text to `LANGUAGETOOL_URL`.
+- Before launch, verify account isolation, login/logout, cookie settings, rate limits across multiple API instances, database failover, backup restoration, and browser behavior on the production domains. Publish privacy, retention, and support information for real users.
+
+These steps are deployment-specific; successful local builds alone do not certify a production deployment.
+
+## Privacy
+
+Mireth uses Google to sign you in and stores your notes and account data in its configured PostgreSQL database. When deployed, connections to the app should use HTTPS. If you use grammar checks, the submitted text is sent to the LanguageTool service configured by the app owner; use a private service or review that provider's privacy terms before sending personal text. Mireth does not sell your notes. Google, hosting, database, and grammar providers may process data as needed to provide their services under their own terms. Data-at-rest encryption and backup retention depend on the configured providers and account settings.
 
 ## Future improvements
 
@@ -178,10 +205,9 @@ Ideas for extending the learning project:
 
 - Add automated API and UI tests for note creation, updates, deletion, grammar suggestions, and Markdown rendering.
 - Add a dedicated multipart upload endpoint if files need to be uploaded directly to the API.
-- Move the LanguageTool URL and client API URL into environment-based configuration.
-- Add database migration and setup scripts so a new local database can be initialized automatically.
+- Add automated API and browser end-to-end checks for authentication, account isolation, and production cookie behavior.
+- Add a documented deployment pipeline and backup restore runbook for the chosen hosting provider.
 - Add undo or reset controls for applied grammar suggestions.
-- Add authentication and per-user data only if the app later needs to support multiple users or public access.
 
 ## Contributing
 

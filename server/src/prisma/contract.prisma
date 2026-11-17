@@ -9,6 +9,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @onCreate(now()) @onUpdate(now())
   notes     Note[]
+  sessions  Session[]
 }
 
 model Note {
@@ -19,4 +20,23 @@ model Note {
   updatedAt DateTime @onCreate(now()) @onUpdate(now())
   ownerId   Int?
   owner     User?    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  tokenHash String   @id
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model RateLimitCounter {
+  key       String   @id
+  count     Int      @default(0)
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }

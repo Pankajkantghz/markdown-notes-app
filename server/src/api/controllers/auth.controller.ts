@@ -5,6 +5,12 @@ import {
   signInWithGoogle,
   verifyGoogleCredential,
 } from "../../services/auth.service.js";
+import {
+  clearSessionCookie,
+  createSession,
+  readSessionCookie,
+  revokeSession,
+} from "../../services/session.service.js";
 
 export async function googleLogin(
   req: Request,
@@ -32,6 +38,7 @@ export async function googleLogin(
   }
   try {
     const user = await signInWithGoogle(payload);
+    await createSession(user.id, res);
     return res.status(200).json({
       success: true,
       data: {
@@ -51,4 +58,10 @@ export async function googleLogin(
 export function getCurrentUser(req: Request, res: Response) {
   const user = req.authUser!;
   return res.json({ success: true, data: { user } });
+}
+
+export async function logout(req: Request, res: Response) {
+  await revokeSession(readSessionCookie(req.headers.cookie));
+  clearSessionCookie(res);
+  return res.status(204).end();
 }

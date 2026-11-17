@@ -14,6 +14,7 @@ import type {
 } from "../types/note.types.js";
 import { marked } from "marked";
 import { safeMarkdownRenderer } from "../utils/markdown.js";
+import config from "../config/index.js";
 
 interface LanguageToolApiResponse {
   matches: LanguageToolMatch[];
@@ -23,7 +24,7 @@ export const checkGrammarWithLanguageTool = async (
   text: string,
 ): Promise<GrammarCheckResponse> => {
   try {
-    const url = "http://localhost:8010/v2/check";
+    const url = `${config.languageToolUrl}/v2/check`;
 
     const formbody = new URLSearchParams();
     formbody.append("language", "en-US");
@@ -112,7 +113,9 @@ export const getAllNotesService = async (
       .limit(limit)
       .offset(skip)
       .all(),
-    db.orm.public.Note.where({ ownerId }).aggregate((aggregate: any) => ({ total: aggregate.count() })),
+    db.orm.public.Note.where({ ownerId }).aggregate((aggregate: any) => ({
+      total: aggregate.count(),
+    })),
   ]);
 
   return {

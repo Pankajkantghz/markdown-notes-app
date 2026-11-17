@@ -1,4 +1,3 @@
-
 console.log("1. Starting seed script...");
 
 import { db } from "./db";
@@ -638,11 +637,11 @@ async function seed() {
       console.log(`Created note: ${note.title}`);
     }
 
-    console.log(
-      `Successfully seeded ${sampleNotes.length} notes!`
-    );
+    console.log(`Successfully seeded ${sampleNotes.length} notes!`);
   } catch {
-    console.error("Seeding failed. Check the database connection and sample note data.");
+    console.error(
+      "Seeding failed. Check the database connection and sample note data.",
+    );
     process.exitCode = 1;
   }
 }

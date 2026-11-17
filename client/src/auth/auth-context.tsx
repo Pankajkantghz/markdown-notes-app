@@ -23,17 +23,13 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-const tokenKey = "mireth.google.credential";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(() =>
-    Boolean(sessionStorage.getItem(tokenKey)),
-  );
+  const [loading, setLoading] = useState(true);
 
   const signOut = useCallback(() => {
-    sessionStorage.removeItem(tokenKey);
     setUser(null);
+    void axiosClient.post("/auth/logout").catch(() => {});
   }, []);
 
   const signIn = useCallback(async (credential: string) => {
@@ -41,22 +37,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       "/auth/google",
       { credential },
     );
-    sessionStorage.setItem(tokenKey, credential);
     setUser(response.data.data.user);
   }, []);
 
   useEffect(() => {
     const onUnauthorized = () => signOut();
     window.addEventListener("mireth:unauthorized", onUnauthorized);
-    const credential = sessionStorage.getItem(tokenKey);
-    if (!credential) {
-      return () =>
-        window.removeEventListener("mireth:unauthorized", onUnauthorized);
-    }
     axiosClient
       .get<{ data: { user: AuthUser } }>("/auth/me")
       .then((response) => setUser(response.data.data.user))
-      .catch(signOut)
+      .catch(() => setUser(null))
       .finally(() => setLoading(false));
     return () =>
       window.removeEventListener("mireth:unauthorized", onUnauthorized);

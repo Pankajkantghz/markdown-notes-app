@@ -4,8 +4,8 @@ import postgresLoader from "./postgres.js";
 
 export default async ({ expressApp }: { expressApp: Express }) => {
   await postgresLoader();
-  console.log("postgres db is connected successfully");
+  console.info(JSON.stringify({ type: "database_ready" }));
 
   expressLoader({ app: expressApp });
-  console.log("Express loaded");
+  console.info(JSON.stringify({ type: "http_loader_ready" }));
 };

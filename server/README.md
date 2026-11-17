@@ -1,6 +1,6 @@
 # Mireth API
 
-Express and TypeScript REST API for Mireth. It stores notes in PostgreSQL, checks grammar through a local LanguageTool service, and returns rendered Markdown as HTML.
+Express and TypeScript REST API for Mireth. PostgreSQL stores users, private notes, revocable sessions, and shared rate-limit counters. Grammar requests go to the configured LanguageTool service.
 
 ## Requirements
 
@@ -20,16 +20,17 @@ Set the database connection and server settings in `.env`:
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DATABASE"
-PORT=5000
-HOST=127.0.0.1
 CLIENT_ORIGINS=http://localhost:5173
 GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
+LANGUAGETOOL_URL=http://localhost:8010
+SESSION_COOKIE_SAME_SITE=lax
+TRUST_PROXY=0
 ```
 
-Set `GOOGLE_CLIENT_ID` to a Google **Web application** client ID. Use the same ID as `VITE_GOOGLE_CLIENT_ID` in `client/.env`; authorize the frontend origin (for local development, `http://localhost:5173`) in Google Cloud Console. This Identity Services credential flow does not need a redirect URI or client secret. Apply the database schema before starting the API:
+Set `GOOGLE_CLIENT_ID` to a Google **Web application** client ID. Use the same ID as `VITE_GOOGLE_CLIENT_ID` in `client/.env`; authorize the frontend origin (for local development, `http://localhost:5173`) in Google Cloud Console. This Identity Services credential flow does not need a redirect URI or client secret. `LANGUAGETOOL_URL` must point to a reachable LanguageTool service; the API sends grammar requests to its `/v2/check` endpoint. Apply the database schema before starting the API:
 
 ```sh
-pnpm prisma db migrate
+pnpm db:migrate
 ```
 
 Keep `.env` private and use a database account with access only to this app's database. The default server address is `127.0.0.1:5000`; `CLIENT_ORIGINS` defaults to `http://localhost:5173`.
@@ -55,7 +56,7 @@ pnpm start
 
 ## Swagger documentation
 
-With the API running, open `http://127.0.0.1:5000/docs` for interactive Swagger UI or `http://127.0.0.1:5000/openapi.json` for the OpenAPI document. The specification is maintained in `src/docs/openapi.ts` and includes the health, notes, and grammar endpoints.
+With the API running, open `http://127.0.0.1:5000/docs` for interactive Swagger UI or `http://127.0.0.1:5000/openapi.json` for the OpenAPI document. Health probes are `GET /health/live` and `GET /health/ready`; readiness checks PostgreSQL and the required migrated tables.
 
 ## Endpoints
 
@@ -64,6 +65,9 @@ With the API running, open `http://127.0.0.1:5000/docs` for interactive Swagger 
 | `GET` | `/` | API health message |
 | `POST` | `/auth/google` | Verify a Google Identity Services credential and sign in or create the user |
 | `GET` | `/auth/me` | Return the signed-in user |
+| `POST` | `/auth/logout` | Revoke the current session and clear its cookie |
+| `GET` | `/health/live` | Process liveness probe |
+| `GET` | `/health/ready` | Database readiness probe |
 | `POST` | `/notes/grammar` | Check `{ "text": "..." }` with LanguageTool |
 | `POST` | `/notes` | Create a note with `{ "title": "...", "content": "..." }` |
 | `GET` | `/notes?page=1&limit=12` | List notes with pagination |
@@ -71,12 +75,14 @@ With the API running, open `http://127.0.0.1:5000/docs` for interactive Swagger 
 | `PATCH` | `/notes/:id` | Update a note's title and Markdown content |
 | `DELETE` | `/notes/:id` | Delete a note |
 
-All `/notes` endpoints require `Authorization: Bearer <Google ID token>`. The client obtains this credential from Google Identity Services. The API verifies the token's signature and audience, identifies the account by Google's stable `sub`, and scopes every note query to that user's database ID. Google ID tokens expire, so users may need to sign in again. Set `GOOGLE_CLIENT_ID` to the same web client ID in both `client/.env` (`VITE_GOOGLE_CLIENT_ID`) and `server/.env`; no client secret is used by this ID-token flow.
+The API verifies Google's ID token at sign-in, then issues a random, revocable, HTTP-only cookie backed by a hashed session token in PostgreSQL. The raw session token is not stored in the database or accessible to frontend JavaScript. Sessions expire after seven days and are revoked on logout. Set `GOOGLE_CLIENT_ID` to the same Web client ID in `client/.env` (`VITE_GOOGLE_CLIENT_ID`) and `server/.env`; this Identity Services flow does not use a Google client secret.
 
-The API limits JSON request bodies to 1 MB, note titles to 160 characters, note content to 200,000 characters, grammar requests to 50,000 characters, and list pages to 100 notes. It allows 120 requests per minute per client IP, with grammar checks limited to 20 per minute. Rate-limit state is in memory and applies to one server process.
+The API limits JSON request bodies to 1 MB, note titles to 160 characters, note content to 200,000 characters, grammar requests to 50,000 characters, and list pages to 100 notes. PostgreSQL stores rate-limit counters, shared by all API instances: 120 note requests per minute per client IP, 20 grammar requests per minute, and 20 auth requests per minute. In production, set `TRUST_PROXY` to the exact number of trusted reverse proxies (or `0` when clients connect directly) so IP-based limits use the real client address.
 
 ## Security notes
 
-The API binds to loopback by default, limits request sizes, validates IDs and pagination, restricts browser origins, and escapes raw HTML in rendered Markdown. Its queries use the Prisma ORM; request values are passed as ORM values rather than concatenated into SQL. Do not add raw SQL string interpolation for request data.
+For production, set `NODE_ENV=production`, serve through HTTPS, configure exact HTTPS `CLIENT_ORIGINS`, `GOOGLE_CLIENT_ID`, and `TRUST_PROXY`, and use a least-privilege PostgreSQL account with `sslmode=verify-full` in `DATABASE_URL` (plus the provider's trusted CA when required). Keep `SESSION_COOKIE_SAME_SITE=lax` when frontend and API share a site; use `none` only for separate sites, where HTTPS is mandatory. Browser requests require an allow-listed origin and the application request header. SQL for sessions and rate limiting uses parameterized values; note queries use the Prisma ORM.
 
-Existing notes remain unowned after the ownership migration and are intentionally hidden from signed-in users. New notes are owned by their creator. CORS is a browser policy, not authentication. Keep the API on a trusted local machine until HTTPS and production-grade shared rate limiting are configured. The built-in limiter is process-local and is not a substitute for an edge or shared-store limiter in a multi-instance deployment.
+Existing notes remain unowned after the ownership migration and are hidden from signed-in users. New notes belong to their creator. Backups, restore testing, alerting, privacy terms, and provider-specific TLS/network configuration must be set up by the deployment operator. Grammar request text is sent to `LANGUAGETOOL_URL`; use a private service or disclose the provider's handling to users.
+
+Apply each migration once as part of the release process (`pnpm db:migrate`); set `MIGRATION_DATABASE_URL` to a separate credential with DDL permissions and keep the API's `DATABASE_URL` limited to runtime data operations. Do not start application instances before migrations finish. Configure automated encrypted database backups and test restoration before storing production user data.
