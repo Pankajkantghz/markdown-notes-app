@@ -37,18 +37,31 @@ export default function NoteReaderView() {
 
   useEffect(() => {
     let active = true;
-    if (id) getNoteHtml(id)
-      .then((note) => { if (active) setResult({ id, note }); })
-      .catch((error) => {
-        console.error("Failed to fetch note HTML:", error);
-        if (active) setResult({ id, error: "Could not load the note. It may have been deleted." });
-      });
-    return () => { active = false; };
+    if (id)
+      getNoteHtml(id)
+        .then((note) => {
+          if (active) setResult({ id, note });
+        })
+        .catch((error) => {
+          console.error("Failed to fetch note HTML:", error);
+          if (active)
+            setResult({
+              id,
+              error: "Could not load the note. It may have been deleted.",
+            });
+        });
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   const loading = Boolean(id) && result?.id !== id;
-  const note = result && result.id === id ? result.note ?? null : null;
-  const error = !id ? "Note not found." : result?.id === id ? result.error : null;
+  const note = result && result.id === id ? (result.note ?? null) : null;
+  const error = !id
+    ? "Note not found."
+    : result?.id === id
+      ? result.error
+      : null;
 
   const handleDelete = async () => {
     if (!id) return;
@@ -64,10 +77,11 @@ export default function NoteReaderView() {
 
   const handleMarkdownDownload = () => {
     if (!note) return;
-    const filename = note.title
-      .trim()
-      .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
-      .replace(/\s+/g, "-") || "note";
+    const filename =
+      note.title
+        .trim()
+        .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
+        .replace(/\s+/g, "-") || "note";
     const url = URL.createObjectURL(
       new Blob([note.content], { type: "text/markdown;charset=utf-8" }),
     );
@@ -95,7 +109,14 @@ export default function NoteReaderView() {
   };
 
   if (loading) {
-    return <main className="flex min-h-[60vh] items-center justify-center text-slate-500 dark:text-slate-400" role="status">Loading note…</main>;
+    return (
+      <main
+        className="flex min-h-[60vh] items-center justify-center text-slate-500 dark:text-slate-400"
+        role="status"
+      >
+        Loading note…
+      </main>
+    );
   }
 
   if (error || !note) {
@@ -104,10 +125,7 @@ export default function NoteReaderView() {
         <p className="text-slate-600 dark:text-slate-300 font-medium">
           {error || "Note not found."}
         </p>
-        <Button
-          size="sm"
-          onClick={() => navigate("/library")}
-        >
+        <Button size="sm" onClick={() => navigate("/library")}>
           Back to Library
         </Button>
       </div>
@@ -138,10 +156,7 @@ export default function NoteReaderView() {
           </Button>
 
           <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
-            <Button
-              size="sm"
-              onClick={handlePrint}
-            >
+            <Button size="sm" onClick={handlePrint}>
               <Printer size={16} />
               Print Note
             </Button>
@@ -161,11 +176,7 @@ export default function NoteReaderView() {
               <Pencil size={16} />
               Edit Note
             </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={handleDelete}
-            >
+            <Button variant="danger" size="sm" onClick={handleDelete}>
               <Trash2 size={16} />
               Delete Note
             </Button>
@@ -199,8 +210,6 @@ export default function NoteReaderView() {
           </article>
         </div>
       </div>
-
-  
     </main>
   );
 }

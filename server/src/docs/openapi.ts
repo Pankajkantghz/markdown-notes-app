@@ -25,7 +25,7 @@ export const openApiDocument = {
       name: "Notes",
       description: "Create, list, update, read, and delete notes",
     },
-    { name: "Grammar", description: "Check text with LanguageTool" },
+    { name: "Grammar", description: "Check text with Sapling" },
   ],
   paths: {
     "/": {

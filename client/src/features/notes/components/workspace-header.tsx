@@ -9,7 +9,11 @@ interface WorkspaceHeaderProps {
   editing: boolean;
 }
 
-export function WorkspaceHeader({ onFileUpload, fileInputRef, editing }: WorkspaceHeaderProps) {
+export function WorkspaceHeader({
+  onFileUpload,
+  fileInputRef,
+  editing,
+}: WorkspaceHeaderProps) {
   return (
     <PageHeader
       title={editing ? "Edit note" : "Create a note"}

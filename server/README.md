@@ -1,12 +1,12 @@
 # Mireth API
 
-Express and TypeScript REST API for Mireth. PostgreSQL stores users, private notes, revocable sessions, and shared rate-limit counters. Grammar requests go to the configured LanguageTool service.
+Express and TypeScript REST API for Mireth. PostgreSQL stores users, private notes, revocable sessions, and shared rate-limit counters. Grammar suggestions come from the Sapling API.
 
 ## Requirements
 
 - Node.js and pnpm
 - PostgreSQL 15 or newer
-- LanguageTool running at `http://localhost:8010` for grammar checks
+- A Sapling API key for grammar checks
 
 ## Setup
 
@@ -22,12 +22,12 @@ Set the database connection and server settings in `.env`:
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DATABASE"
 CLIENT_ORIGINS=http://localhost:5173
 GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
-LANGUAGETOOL_URL=http://localhost:8010
+SAPLING_API_KEY=YOUR_SAPLING_API_KEY
 SESSION_COOKIE_SAME_SITE=lax
 TRUST_PROXY=0
 ```
 
-Set `GOOGLE_CLIENT_ID` to a Google **Web application** client ID. Use the same ID as `VITE_GOOGLE_CLIENT_ID` in `client/.env`; authorize the frontend origin (for local development, `http://localhost:5173`) in Google Cloud Console. This Identity Services credential flow does not need a redirect URI or client secret. `LANGUAGETOOL_URL` must point to a reachable LanguageTool service; the API sends grammar requests to its `/v2/check` endpoint. Apply the database schema before starting the API:
+Set `GOOGLE_CLIENT_ID` to a Google **Web application** client ID. Use the same ID as `VITE_GOOGLE_CLIENT_ID` in `client/.env`; authorize the frontend origin (for local development, `http://localhost:5173`) in Google Cloud Console. This Identity Services credential flow does not need a redirect URI or client secret. Set `SAPLING_API_KEY` in the server environment; never put it in the client or commit it. Apply the database schema before starting the API:
 
 ```sh
 pnpm db:migrate
@@ -68,7 +68,7 @@ With the API running, open `http://127.0.0.1:5000/docs` for interactive Swagger 
 | `POST` | `/auth/logout` | Revoke the current session and clear its cookie |
 | `GET` | `/health/live` | Process liveness probe |
 | `GET` | `/health/ready` | Database readiness probe |
-| `POST` | `/notes/grammar` | Check `{ "text": "..." }` with LanguageTool |
+| `POST` | `/notes/grammar` | Check `{ "text": "..." }` with Sapling |
 | `POST` | `/notes` | Create a note with `{ "title": "...", "content": "..." }` |
 | `GET` | `/notes?page=1&limit=12` | List notes with pagination |
 | `GET` | `/notes/:id/html` | Return the note and safely rendered `htmlContent` |
@@ -83,6 +83,6 @@ The API limits JSON request bodies to 1 MB, note titles to 160 characters, note 
 
 For production, set `NODE_ENV=production`, serve through HTTPS, configure exact HTTPS `CLIENT_ORIGINS`, `GOOGLE_CLIENT_ID`, and `TRUST_PROXY`, and use a least-privilege PostgreSQL account with `sslmode=verify-full` in `DATABASE_URL` (plus the provider's trusted CA when required). Keep `SESSION_COOKIE_SAME_SITE=lax` when frontend and API share a site; use `none` only for separate sites, where HTTPS is mandatory. Browser requests require an allow-listed origin and the application request header. SQL for sessions and rate limiting uses parameterized values; note queries use the Prisma ORM.
 
-Existing notes remain unowned after the ownership migration and are hidden from signed-in users. New notes belong to their creator. Backups, restore testing, alerting, privacy terms, and provider-specific TLS/network configuration must be set up by the deployment operator. Grammar request text is sent to `LANGUAGETOOL_URL`; use a private service or disclose the provider's handling to users.
+Existing notes remain unowned after the ownership migration and are hidden from signed-in users. New notes belong to their creator. Backups, restore testing, alerting, privacy terms, and provider-specific TLS/network configuration must be set up by the deployment operator. Grammar request text is sent to Sapling; disclose this processing to users.
 
 Apply each migration once as part of the release process (`pnpm db:migrate`); set `MIGRATION_DATABASE_URL` to a separate credential with DDL permissions and keep the API's `DATABASE_URL` limited to runtime data operations. Do not start application instances before migrations finish. Configure automated encrypted database backups and test restoration before storing production user data.

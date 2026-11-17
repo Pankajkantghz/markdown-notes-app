@@ -59,8 +59,18 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-3">
-          {user && <span className="hidden text-sm text-slate-600 dark:text-slate-300 sm:inline">{user.name}</span>}
-          <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sign out" title="Sign out">
+          {user && (
+            <span className="hidden text-sm text-slate-600 dark:text-slate-300 sm:inline">
+              {user.name}
+            </span>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={signOut}
+            aria-label="Sign out"
+            title="Sign out"
+          >
             <LogOut size={18} />
           </Button>
           <Button

@@ -1,12 +1,13 @@
 import type { NextFunction, Request, Response } from "express";
 import {
-  checkGrammarWithLanguageTool,
+  checkGrammarWithSapling,
   createNoteService,
   deleteNoteService,
   getAllNotesService,
   getNoteHtmlService,
   updateNoteService,
 } from "../../services/note.service.js";
+import config from "../../config/index.js";
 
 const MAX_TITLE_LENGTH = 160;
 const MAX_NOTE_LENGTH = 200_000;
@@ -46,8 +47,15 @@ export const checkGrammar = async (
       });
       return;
     }
+    if (!config.saplingApiKey) {
+      res.status(503).json({
+        success: false,
+        error: "Grammar checking is not configured. Add SAPLING_API_KEY to server/.env.",
+      });
+      return;
+    }
 
-    const grammarResults = await checkGrammarWithLanguageTool(text);
+    const grammarResults = await checkGrammarWithSapling(text);
 
     res.status(200).json({
       success: true,

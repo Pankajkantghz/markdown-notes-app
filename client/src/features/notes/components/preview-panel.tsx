@@ -159,7 +159,7 @@ Upload a markdown file or start typing your notes here!
 
               <p className="mt-2 max-w-xs text-sm text-slate-500 dark:text-slate-400">
                 Click below to check spelling and grammar suggestions using
-                LanguageTool.
+                Sapling.
               </p>
 
               <Button

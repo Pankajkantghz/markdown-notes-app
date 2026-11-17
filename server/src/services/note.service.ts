@@ -1,9 +1,9 @@
 import axios from "axios";
 
 import type {
-  LanguageToolMatch,
   GrammarCheckResponse,
   GrammarMatch,
+  SaplingEdit,
 } from "../types/grammar.types.js";
 
 import { db } from "../prisma/db.js";
@@ -16,35 +16,31 @@ import { marked } from "marked";
 import { safeMarkdownRenderer } from "../utils/markdown.js";
 import config from "../config/index.js";
 
-interface LanguageToolApiResponse {
-  matches: LanguageToolMatch[];
+interface SaplingApiResponse {
+  edits: SaplingEdit[];
 }
 
-export const checkGrammarWithLanguageTool = async (
+export const checkGrammarWithSapling = async (
   text: string,
 ): Promise<GrammarCheckResponse> => {
   try {
-    const url = `${config.languageToolUrl}/v2/check`;
-
-    const formbody = new URLSearchParams();
-    formbody.append("language", "en-US");
-    formbody.append("text", text);
-
-    const response = await axios.post<LanguageToolApiResponse>(url, formbody, {
-      headers: {
-        accept: "application/json",
-        "Content-Type": "application/x-www-form-urlencoded",
+    if (!config.saplingApiKey) throw new Error("Set SAPLING_API_KEY to enable grammar checks");
+    const response = await axios.post<SaplingApiResponse>(
+      "https://api.sapling.ai/api/v1/edits",
+      { text, lang: "en", variety: "us-variety" },
+      {
+        headers: { Authorization: `Bearer ${config.saplingApiKey}` },
+        timeout: 30_000,
+        maxBodyLength: 1_000_000,
+        maxContentLength: 1_000_000,
       },
-      timeout: 15_000,
-      maxBodyLength: 1_000_000,
-      maxContentLength: 1_000_000,
-    });
+    );
 
-    const matches: GrammarMatch[] = response.data.matches.map((match) => ({
-      message: match.message,
-      offset: match.offset,
-      length: match.length,
-      suggestions: (match.replacements || []).slice(0, 3).map((e) => e.value),
+    const matches: GrammarMatch[] = response.data.edits.map((edit) => ({
+      message: edit.general_error_type || edit.error_type || "Suggested correction",
+      offset: edit.sentence_start + edit.start,
+      length: edit.end - edit.start,
+      suggestions: edit.replacement ? [edit.replacement] : [],
     }));
 
     return {
@@ -57,7 +53,7 @@ export const checkGrammarWithLanguageTool = async (
   } catch (error) {
     console.error(
       axios.isAxiosError(error)
-        ? "LanguageTool request failed"
+        ? "Sapling request failed"
         : "Unexpected grammar check failure",
     );
 

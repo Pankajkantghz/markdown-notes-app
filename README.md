@@ -22,7 +22,7 @@ flowchart LR
   Routes --> Controllers[Controllers]
   Controllers --> Services[Note and session services]
   Services -->|Users, sessions, owned notes, rate limits| DB
-  Services -->|Grammar text| LT[Configured LanguageTool service]
+  Services -->|Grammar text + server API key| Sapling[Sapling grammar API]
   Services -->|Render saved Markdown| HTML[Safe HTML response]
   HTML --> Pages
   Pages -->|Read selected .md/.txt locally| Pages
@@ -30,7 +30,7 @@ flowchart LR
   API --> Docs[OpenAPI + Swagger UI]
 ```
 
-The client contains the branded, theme-aware Google sign-in page, editor, Markdown preview, grammar suggestions, library, and note reader. Google Identity Services returns an ID credential to the client, which exchanges it with the API for a revocable HTTP-only session cookie. Authenticated note requests use that cookie; the API scopes reads and writes to the signed-in user. PostgreSQL stores users, sessions, owned notes, and shared rate-limit counters. Grammar text is sent to the configured LanguageTool service. The API safely renders saved Markdown for the reader, while the live preview sanitizes rendered HTML with DOMPurify. File selection stays in the browser before note text is sent to the API.
+The client contains the branded, theme-aware Google sign-in page, editor, Markdown preview, grammar suggestions, library, and note reader. Google Identity Services returns an ID credential to the client, which exchanges it with the API for a revocable HTTP-only session cookie. Authenticated note requests use that cookie; the API scopes reads and writes to the signed-in user. PostgreSQL stores users, sessions, owned notes, and shared rate-limit counters. For grammar checks, the server sends text to Sapling using a server-side API key. The API safely renders saved Markdown for the reader, while the live client preview sanitizes rendered HTML with DOMPurify. File selection stays in the browser before note text is sent to the API.
 
 ### Frontend architecture
 
@@ -44,7 +44,7 @@ The editor and preview share note content state. Saving and library actions use 
 - Sign in with Google and keep each account's notes private to that user.
 - Use a responsive, theme-aware sign-in page styled with Mireth's brand.
 - Import `.md` and `.txt` files from the editor.
-- Check spelling and grammar with LanguageTool, view underlined matches, and apply suggested replacements.
+- Check spelling and grammar with Sapling, view underlined matches, and apply suggested replacements.
 - Save, edit, search, paginate, read, and delete notes.
 - Render saved Markdown as HTML.
 - Switch between light and dark themes.
@@ -60,7 +60,7 @@ The editor and preview share note content state. Saving and library actions use 
 | API | Node.js, Express, Axios |
 | API docs | OpenAPI 3.0, Swagger UI |
 | Database | PostgreSQL 15 or newer, Prisma ORM for PostgreSQL |
-| Grammar | LanguageTool-compatible HTTP service |
+| Grammar | Sapling grammar-check API |
 | Package management | pnpm (server package metadata specifies pnpm 10.32.1) |
 | Development tools | pnpm, Git, TypeScript compiler, Oxlint |
 
@@ -70,7 +70,7 @@ The editor and preview share note content state. Saving and library actions use 
 
 - Node.js and pnpm
 - PostgreSQL 15 or newer
-- LanguageTool available at `http://localhost:8010` for grammar checks
+- A Sapling API key for grammar checks
 
 ### 1. Configure the database
 
@@ -82,12 +82,12 @@ Create `server/.env` with your local database connection and development server 
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DATABASE"
 CLIENT_ORIGINS=http://localhost:5173
 GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
-LANGUAGETOOL_URL=http://localhost:8010
+SAPLING_API_KEY=YOUR_SAPLING_API_KEY
 SESSION_COOKIE_SAME_SITE=lax
 TRUST_PROXY=0
 ```
 
-Set the same Google **Web application** client ID in `client/.env` as `VITE_GOOGLE_CLIENT_ID`. For local Google Identity Services sign-in, authorize `http://localhost:5173` as a JavaScript origin; this flow does not use a redirect URI or client secret. Keep both `.env` files local; they are excluded from Git. `LANGUAGETOOL_URL` points the API to LanguageTool; locally, start the service at `http://localhost:8010` before using grammar checks.
+Set the same Google **Web application** client ID in `client/.env` as `VITE_GOOGLE_CLIENT_ID`. For local Google Identity Services sign-in, authorize `http://localhost:5173` as a JavaScript origin; this flow does not use a redirect URI or client secret. Keep both `.env` files local; they are excluded from Git. Add your Sapling API key to `server/.env`; keep it out of the client env and Git.
 
 In a terminal, install and start the API:
 
@@ -186,18 +186,18 @@ GitHub Actions runs client lint/build, server build, and migration integrity che
 Connect the GitHub repository to Vercel for the client and Render for the API, and enable deploys from the chosen production branch. Keep deployments behind the CI checks and set each provider's build, start, and environment settings from its dashboard. Neon hosts PostgreSQL; use its pooled runtime URL for the API and a migration-capable URL for release migrations. Configure the exact deployed frontend origin in both Google OAuth and the API's `CLIENT_ORIGINS`.
 
 - Serve the client and API over HTTPS. Prefer the same site for both; for separate origins, configure `SESSION_COOKIE_SAME_SITE=none` and ensure the browser permits the cookie.
-- Set `NODE_ENV=production`, a PostgreSQL `DATABASE_URL` with `sslmode=verify-full` and the provider's trusted CA when required, the matching Google Web client ID, HTTPS `CLIENT_ORIGINS`, an HTTPS `LANGUAGETOOL_URL`, and the correct `TRUST_PROXY` hop count. Use a least-privilege database account.
+- Set `NODE_ENV=production`, a PostgreSQL `DATABASE_URL` with `sslmode=verify-full` and the provider's trusted CA when required, the matching Google Web client ID, HTTPS `CLIENT_ORIGINS`, `SAPLING_API_KEY`, and the correct `TRUST_PROXY` hop count. Use a least-privilege database account.
 - Set `VITE_GOOGLE_CLIENT_ID` to the same ID and `VITE_API_URL` to the API origin (or leave it unset when a same-origin proxy routes API paths). Add only the deployed frontend origin to Google Authorized JavaScript origins.
 - Apply migrations as a release step with `cd server && pnpm db:migrate`; do not run schema migrations concurrently from each application instance. Set `MIGRATION_DATABASE_URL` to a separate migration-only credential in deployment and keep the API's `DATABASE_URL` restricted to runtime data operations.
 - Monitor `/health/live` and `/health/ready`. Configure automated encrypted PostgreSQL backups and regularly test restore procedures, alerting, log retention, and rollback.
-- Deploy a private LanguageTool service or document and disclose the configured provider: grammar requests send the submitted text to `LANGUAGETOOL_URL`.
+- Grammar requests send submitted text to Sapling. Review its data handling terms and disclose this processing to users.
 - Before launch, verify account isolation, login/logout, cookie settings, rate limits across multiple API instances, database failover, backup restoration, and browser behavior on the production domains. Publish privacy, retention, and support information for real users.
 
 These steps are deployment-specific; successful local builds alone do not certify a production deployment.
 
 ## Privacy
 
-Mireth uses Google to sign you in and stores your notes and account data in its configured PostgreSQL database. When deployed, connections to the app should use HTTPS. If you use grammar checks, the submitted text is sent to the LanguageTool service configured by the app owner; use a private service or review that provider's privacy terms before sending personal text. Mireth does not sell your notes. Google, hosting, database, and grammar providers may process data as needed to provide their services under their own terms. Data-at-rest encryption and backup retention depend on the configured providers and account settings.
+Mireth uses Google to sign you in and stores your notes and account data in its configured PostgreSQL database. When deployed, connections to the app should use HTTPS. If you use grammar checks, submitted text is sent to Sapling; review its privacy terms before sending personal text. Mireth does not sell your notes. Google, hosting, database, and grammar providers may process data as needed to provide their services under their own terms. Data-at-rest encryption and backup retention depend on the configured providers and account settings.
 
 ## Future improvements
 
@@ -216,7 +216,7 @@ Contributions and learning-focused improvements are welcome.
 1. Fork the repository and create a branch for your change.
 2. Install dependencies in both `client/` and `server/` using `pnpm install`.
 3. Make a focused change. For API changes, keep the route, controller, service, and README documentation consistent.
-4. Run the client lint/build checks and the server build from the [Development checks](#development-checks) section. Manually verify changes that need PostgreSQL or LanguageTool with those local services running.
+4. Run the client lint/build checks and the server build from the [Development checks](#development-checks) section. Manually verify grammar changes with a configured Sapling API key.
 5. Open a pull request describing what changed and how you verified it. Include screenshots for visible UI changes when useful.
 
 Do not commit `.env` files, database credentials, or other local secrets. Please keep changes scoped to the issue or feature being addressed.

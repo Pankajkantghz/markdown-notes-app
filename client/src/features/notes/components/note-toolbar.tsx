@@ -10,7 +10,14 @@ interface NoteToolbarProps {
   editing: boolean;
 }
 
-export function NoteToolbar({ title, setTitle, content, onSave, saving, editing }: NoteToolbarProps) {
+export function NoteToolbar({
+  title,
+  setTitle,
+  content,
+  onSave,
+  saving,
+  editing,
+}: NoteToolbarProps) {
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
   const charCount = content.length;
 
@@ -42,11 +49,12 @@ export function NoteToolbar({ title, setTitle, content, onSave, saving, editing 
           <span>{charCount} characters</span>
         </div>
 
-        <Button
-          onClick={onSave}
-          disabled={saving}
-        >
-          {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+        <Button onClick={onSave} disabled={saving}>
+          {saving ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <Save size={16} />
+          )}
           {saving ? "Saving..." : editing ? "Update Note" : "Save Note"}
         </Button>
       </div>

@@ -55,8 +55,10 @@ export default function LoginRoute() {
   const [working, setWorking] = useState(false);
 
   useEffect(() => {
-    const dark = localStorage.getItem("theme") === "dark" ||
-      (!localStorage.getItem("theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    const dark =
+      localStorage.getItem("theme") === "dark" ||
+      (!localStorage.getItem("theme") &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
     document.documentElement.classList.toggle("dark", dark);
   }, []);
 
@@ -67,45 +69,49 @@ export default function LoginRoute() {
     let active = true;
     credentialHandler = (credential) => {
       if (active) {
-          setWorking(true);
-          setError("");
-          signIn(credential)
-            .catch((error: unknown) =>
-              setError(
-                axios.isAxiosError(error)
-                  ? error.response?.data?.error ||
-                      "Cannot reach the API. Start the server and try again."
-                  : "Google sign-in failed. Please try again.",
-              ),
-            )
-            .finally(() => setWorking(false));
+        setWorking(true);
+        setError("");
+        signIn(credential)
+          .catch((error: unknown) =>
+            setError(
+              axios.isAxiosError(error)
+                ? error.response?.data?.error ||
+                    "Cannot reach the API. Start the server and try again."
+                : "Google sign-in failed. Please try again.",
+            ),
+          )
+          .finally(() => setWorking(false));
       }
     };
-    loadGoogleIdentity().then(() => {
-      if (!active || !window.google) return;
-      if (!googleClientId) {
-        window.google.accounts.id.initialize({
-          client_id: clientId,
-          callback: ({ credential }) => credentialHandler?.(credential),
+    loadGoogleIdentity()
+      .then(() => {
+        if (!active || !window.google) return;
+        if (!googleClientId) {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: ({ credential }) => credentialHandler?.(credential),
+          });
+          googleClientId = clientId;
+        }
+        if (googleClientId !== clientId) {
+          setError(
+            "The configured Google client changed. Reload the app to sign in.",
+          );
+          return;
+        }
+        window.google.accounts.id.renderButton(button, {
+          theme: document.documentElement.classList.contains("dark")
+            ? "filled_black"
+            : "outline",
+          size: "large",
+          shape: "pill",
+          text: "continue_with",
+          width: 300,
         });
-        googleClientId = clientId;
-      }
-      if (googleClientId !== clientId) {
-        setError("The configured Google client changed. Reload the app to sign in.");
-        return;
-      }
-      window.google.accounts.id.renderButton(button, {
-        theme: document.documentElement.classList.contains("dark")
-          ? "filled_black"
-          : "outline",
-        size: "large",
-        shape: "pill",
-        text: "continue_with",
-        width: 300,
+      })
+      .catch(() => {
+        if (active) setError("Could not load Google sign-in.");
       });
-    }).catch(() => {
-      if (active) setError("Could not load Google sign-in.");
-    });
     return () => {
       active = false;
       credentialHandler = undefined;
@@ -131,7 +137,9 @@ export default function LoginRoute() {
               <span className="grid h-11 w-11 place-items-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
                 <BookOpen size={21} strokeWidth={1.9} />
               </span>
-              <span className="text-xl font-semibold tracking-[-0.04em]">mireth</span>
+              <span className="text-xl font-semibold tracking-[-0.04em]">
+                mireth
+              </span>
             </div>
             <div className="mt-16 max-w-md">
               <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-white/65 px-3 py-1.5 text-xs font-medium text-indigo-800 dark:border-indigo-400/15 dark:bg-white/5 dark:text-indigo-200">
@@ -141,13 +149,16 @@ export default function LoginRoute() {
                 Give your thoughts a place to grow.
               </h1>
               <p className="mt-5 max-w-sm text-base leading-7 text-slate-600 dark:text-slate-300">
-                Write without distraction. Refine every thought. Keep what matters.
+                Write without distraction. Refine every thought. Keep what
+                matters.
               </p>
             </div>
           </div>
           <div className="relative mt-14 flex items-center gap-3 border-t border-indigo-200/80 pt-5 text-xs font-medium uppercase tracking-[0.16em] text-slate-500 dark:border-indigo-300/10 dark:text-slate-400">
-            <span>Write</span><span className="h-px flex-1 bg-indigo-300/70 dark:bg-indigo-300/15" />
-            <span>Refine</span><span className="h-px flex-1 bg-indigo-300/70 dark:bg-indigo-300/15" />
+            <span>Write</span>
+            <span className="h-px flex-1 bg-indigo-300/70 dark:bg-indigo-300/15" />
+            <span>Refine</span>
+            <span className="h-px flex-1 bg-indigo-300/70 dark:bg-indigo-300/15" />
             <span>Remember</span>
           </div>
         </section>
@@ -157,8 +168,12 @@ export default function LoginRoute() {
             <div className="mb-8 grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-indigo-600 dark:bg-slate-800 dark:text-indigo-300">
               <Feather size={21} />
             </div>
-            <p className="text-sm font-medium text-indigo-600 dark:text-indigo-300">YOUR PERSONAL NOTEBOOK</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.035em]">Welcome to Mireth</h2>
+            <p className="text-sm font-medium text-indigo-600 dark:text-indigo-300">
+              YOUR PERSONAL NOTEBOOK
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.035em]">
+              Welcome to Mireth
+            </h2>
             <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
               Sign in to pick up where your ideas left off.
             </p>
@@ -176,10 +191,18 @@ export default function LoginRoute() {
               )}
             </div>
             {working && (
-              <p className="mt-3 text-center text-sm text-slate-500" role="status">Signing you in…</p>
+              <p
+                className="mt-3 text-center text-sm text-slate-500"
+                role="status"
+              >
+                Signing you in…
+              </p>
             )}
             {error && (
-              <p className="mt-3 text-center text-sm text-red-600 dark:text-red-400" role="alert">
+              <p
+                className="mt-3 text-center text-sm text-red-600 dark:text-red-400"
+                role="alert"
+              >
                 {error}
               </p>
             )}
@@ -190,8 +213,20 @@ export default function LoginRoute() {
               <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
             </div>
             <ul className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
-              <li className="flex items-center gap-3"><Check size={16} className="text-indigo-600 dark:text-indigo-300" /> Your notes stay organized in one place</li>
-              <li className="flex items-center gap-3"><Check size={16} className="text-indigo-600 dark:text-indigo-300" /> Your writing is private to your account</li>
+              <li className="flex items-center gap-3">
+                <Check
+                  size={16}
+                  className="text-indigo-600 dark:text-indigo-300"
+                />{" "}
+                Your notes stay organized in one place
+              </li>
+              <li className="flex items-center gap-3">
+                <Check
+                  size={16}
+                  className="text-indigo-600 dark:text-indigo-300"
+                />{" "}
+                Your writing is private to your account
+              </li>
             </ul>
             <div className="mt-8 flex items-center justify-center gap-2 text-xs text-slate-400">
               <LockKeyhole size={13} /> Secure sign-in with Google

@@ -10,7 +10,12 @@ interface EditorPanelProps {
   appliedIndices: number[];
 }
 
-export function EditorPanel({ content, setContent, grammarResults, appliedIndices }: EditorPanelProps) {
+export function EditorPanel({
+  content,
+  setContent,
+  grammarResults,
+  appliedIndices,
+}: EditorPanelProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightsRef = useRef<HTMLDivElement>(null);
   const highlights = [];
@@ -26,7 +31,15 @@ export function EditorPanel({ content, setContent, grammarResults, appliedIndice
     const end = Math.min(content.length, match.offset + match.length);
     if (start >= end) continue;
     highlights.push(content.slice(cursor, start));
-    highlights.push(<span key={index} className="underline decoration-wavy decoration-rose-500 underline-offset-4" title={match.message}>{content.slice(start, end)}</span>);
+    highlights.push(
+      <span
+        key={index}
+        className="underline decoration-wavy decoration-rose-500 underline-offset-4"
+        title={match.message}
+      >
+        {content.slice(start, end)}
+      </span>,
+    );
     cursor = end;
   }
   highlights.push(content.slice(cursor));
@@ -45,8 +58,18 @@ export function EditorPanel({ content, setContent, grammarResults, appliedIndice
       </PanelHeader>
 
       <div className="relative min-h-[400px] flex-1">
-        <div ref={highlightsRef} aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words bg-white p-5 font-mono text-sm leading-7 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
-          {content ? highlights : <span className="text-slate-400 dark:text-slate-500"># Start writing...{"\n\n"}Write your note using Markdown.</span>}
+        <div
+          ref={highlightsRef}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words bg-white p-5 font-mono text-sm leading-7 text-slate-800 dark:bg-slate-900 dark:text-slate-100"
+        >
+          {content ? (
+            highlights
+          ) : (
+            <span className="text-slate-400 dark:text-slate-500">
+              # Start writing...{"\n\n"}Write your note using Markdown.
+            </span>
+          )}
         </div>
         <textarea
           ref={textareaRef}

@@ -493,7 +493,7 @@ pnpm exec prisma studio
 | Express | API Framework | Complete |
 | PostgreSQL | Database | Complete |
 | Prisma | ORM | In Progress |
-| LanguageTool | Grammar Checking | In Progress |
+| Sapling API | Grammar Checking | In Progress |
 
 ### Feature Comparison
 

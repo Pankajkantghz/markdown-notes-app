@@ -16,23 +16,12 @@ const sameSite = process.env.SESSION_COOKIE_SAME_SITE || "lax";
 const trustProxyValue = process.env.TRUST_PROXY;
 const trustProxy =
   trustProxyValue === undefined ? false : Number(trustProxyValue);
-const languageToolUrl =
-  process.env.LANGUAGETOOL_URL?.trim().replace(/\/$/, "") || "";
+const saplingApiKey = process.env.SAPLING_API_KEY?.trim() || "";
 const databaseUrl = process.env.DATABASE_URL || "";
 
 if (!Number.isInteger(port) || port < 1 || port > 65535)
   throw new Error("PORT must be between 1 and 65535");
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL must be set");
-if (!languageToolUrl)
-  throw new Error(
-    "LANGUAGETOOL_URL must be set (for local development, use http://localhost:8010)",
-  );
-try {
-  if (!["http:", "https:"].includes(new URL(languageToolUrl).protocol))
-    throw new Error();
-} catch {
-  throw new Error("LANGUAGETOOL_URL must be a valid HTTP or HTTPS URL");
-}
 if (production) {
   let sslMode = "";
   try {
@@ -66,8 +55,8 @@ if (!["lax", "strict", "none"].includes(sameSite))
   throw new Error("SESSION_COOKIE_SAME_SITE must be lax, strict, or none");
 if (production && !process.env.GOOGLE_CLIENT_ID?.trim())
   throw new Error("GOOGLE_CLIENT_ID is required in production");
-if (production && !languageToolUrl.startsWith("https://"))
-  throw new Error("LANGUAGETOOL_URL must use HTTPS in production");
+if (production && !saplingApiKey)
+  throw new Error("SAPLING_API_KEY is required in production");
 if (production && trustProxyValue === undefined)
   throw new Error(
     "Set TRUST_PROXY to the number of trusted reverse proxies in production (use 0 when direct)",
@@ -88,6 +77,6 @@ export default {
   clientOrigins,
   googleClientId: process.env.GOOGLE_CLIENT_ID?.trim() || "",
   databaseUrl,
-  languageToolUrl,
+  saplingApiKey,
   sessionSameSite: sameSite as "lax" | "strict" | "none",
 };

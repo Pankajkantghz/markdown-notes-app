@@ -1,4 +1,5 @@
 import { useRef, useState, type ChangeEvent } from "react";
+import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -67,7 +68,11 @@ export default function HomeRoute() {
       setMatches(await checkGrammarAPI(content));
       setApplied([]);
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Failed to check grammar. Please try again.");
+      toast.error(
+        axios.isAxiosError<{ error?: string }>(error)
+          ? error.response?.data?.error || "Grammar check failed. Please try again."
+          : error instanceof Error ? error.message : "Failed to check grammar. Please try again.",
+      );
     } finally {
       setChecking(false);
     }
@@ -75,8 +80,19 @@ export default function HomeRoute() {
 
   return (
     <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8">
-      <WorkspaceHeader onFileUpload={handleFile} fileInputRef={fileRef} editing={Boolean(note)} />
-      <NoteToolbar title={title} setTitle={setTitle} content={content} onSave={save} saving={saving} editing={Boolean(note)} />
+      <WorkspaceHeader
+        onFileUpload={handleFile}
+        fileInputRef={fileRef}
+        editing={Boolean(note)}
+      />
+      <NoteToolbar
+        title={title}
+        setTitle={setTitle}
+        content={content}
+        onSave={save}
+        saving={saving}
+        editing={Boolean(note)}
+      />
 
       <div className="grid min-h-0 grid-cols-1 gap-5 lg:grid-cols-2">
         <EditorPanel

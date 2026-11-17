@@ -5,13 +5,13 @@ export interface GrammarMatch {
   suggestions: string[];
 }
 
-export interface LanguageToolMatch {
-  message: string;
-  offset: number;
-  length: number;
-  replacements: {
-    value: string;
-  }[];
+export interface SaplingEdit {
+  start: number;
+  end: number;
+  sentence_start: number;
+  replacement: string;
+  error_type?: string;
+  general_error_type?: string;
 }
 
 export interface GrammarCheckResponse {

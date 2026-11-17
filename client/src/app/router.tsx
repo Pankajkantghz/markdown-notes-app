@@ -1,5 +1,12 @@
 // src/app/router.tsx
-import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Link,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { ContentLayout } from "@/components/layouts";
 import { AuthProvider, useAuth } from "@/auth/auth-context";
 import LoginRoute from "@/auth/login-route";
@@ -23,7 +30,15 @@ export const AppRouter = () => {
 function AuthenticatedRoutes() {
   const { user, loading } = useAuth();
   const location = useLocation();
-  if (loading) return <main className="flex min-h-screen items-center justify-center text-slate-500" role="status">Loading Mireth…</main>;
+  if (loading)
+    return (
+      <main
+        className="flex min-h-screen items-center justify-center text-slate-500"
+        role="status"
+      >
+        Loading Mireth…
+      </main>
+    );
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
   return (
     <ContentLayout>
