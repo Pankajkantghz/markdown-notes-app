@@ -1,5 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/auth/:path*",
@@ -15,6 +23,10 @@
       "source": "/health/:path*",
       "has": [{ "type": "header", "key": "X-Mireth-Request", "value": "1" }],
       "destination": "https://mireth-xyj0.onrender.com/health/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }

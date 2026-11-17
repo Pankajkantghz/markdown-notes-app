@@ -99,8 +99,7 @@ export const openApiDocument = {
         tags: ["Auth"],
         summary: "Get the signed-in user",
         responses: {
-          "200": { description: "Current user profile" },
-          "401": errorResponse,
+          "200": { description: "Current user profile, or null when signed out" },
         },
       },
     },

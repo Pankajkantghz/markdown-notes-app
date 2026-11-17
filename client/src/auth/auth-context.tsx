@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const onUnauthorized = () => signOut();
     window.addEventListener("mireth:unauthorized", onUnauthorized);
     axiosClient
-      .get<{ data: { user: AuthUser } }>("/auth/me")
+      .get<{ data: { user: AuthUser | null } }>("/auth/me")
       .then((response) => setUser(response.data.data.user))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));

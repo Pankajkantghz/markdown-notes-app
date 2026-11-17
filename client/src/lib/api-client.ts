@@ -1,8 +1,8 @@
 import axios from "axios";
 
 export const axiosClient = axios.create({
-  // Defaults to same-origin so production can route /notes through a proxy.
-  baseURL: import.meta.env.VITE_API_URL || "/",
+  // Production must stay same-origin so Chrome accepts the session cookie.
+  baseURL: import.meta.env.PROD ? "/" : import.meta.env.VITE_API_URL || "/",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

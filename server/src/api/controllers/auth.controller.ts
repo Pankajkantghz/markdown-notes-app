@@ -8,6 +8,7 @@ import {
 import {
   clearSessionCookie,
   createSession,
+  findSessionUser,
   readSessionCookie,
   revokeSession,
 } from "../../services/session.service.js";
@@ -55,8 +56,9 @@ export async function googleLogin(
   }
 }
 
-export function getCurrentUser(req: Request, res: Response) {
-  const user = req.authUser!;
+export async function getCurrentUser(req: Request, res: Response) {
+  const user = await findSessionUser(readSessionCookie(req.headers.cookie));
+  if (!user) clearSessionCookie(res);
   return res.json({ success: true, data: { user } });
 }
 
