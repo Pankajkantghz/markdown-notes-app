@@ -80,6 +80,7 @@ export default function LibraryRoute() {
         description="Manage and organize all your notes in one place."
         action={
           <Button
+            className="w-full sm:w-auto"
             onClick={() => navigate("/")}
           >
             <Plus size={17} /> New Note
@@ -166,8 +167,8 @@ export default function LibraryRoute() {
                 </div>
               </Link>
 
-              <div className="mt-5 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
-                <span className="text-xs text-slate-500 dark:text-slate-400">
+              <div className="mt-5 flex flex-col gap-2 border-t border-slate-100 dark:border-slate-800 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <span className="break-words text-xs text-slate-500 dark:text-slate-400">
                   Updated{" "}
                   {note.updatedAt
                     ? new Date(note.updatedAt).toLocaleString("en-US", {
@@ -180,10 +181,11 @@ export default function LibraryRoute() {
                     : ""}
                 </span>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center justify-end gap-1 sm:justify-start">
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="size-11"
                     aria-label={`Edit ${note.title}`}
                     onClick={() => navigate("/", { state: { note } })}
                   >
@@ -193,6 +195,7 @@ export default function LibraryRoute() {
                   <Button
                     variant="danger"
                     size="icon"
+                    className="size-11"
                     aria-label={`Delete ${note.title}`}
                     onClick={() => handleDelete(note.id!)}
                   >

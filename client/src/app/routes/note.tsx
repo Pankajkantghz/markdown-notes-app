@@ -144,25 +144,26 @@ export default function NoteReaderView() {
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between transition-colors print:min-h-0 print:bg-white print:text-black">
       <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 lg:p-8 flex-1 print:max-w-none print:p-0">
         {/* Top Navigation & Actions */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800 print:hidden">
+        <div className="mb-6 flex flex-col items-stretch gap-3 border-b border-slate-200 pb-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between print:hidden">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate("/library")}
-            className="hover:text-indigo-600 dark:hover:text-indigo-400"
+            className="self-start hover:text-indigo-600 dark:hover:text-indigo-400"
           >
             <ArrowLeft size={18} />
             Back to Library
           </Button>
 
-          <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
-            <Button size="sm" onClick={handlePrint}>
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:max-w-full sm:flex-wrap sm:justify-end">
+            <Button size="sm" className="w-full sm:w-auto" onClick={handlePrint}>
               <Printer size={16} />
               Print Note
             </Button>
             <Button
               variant="secondary"
               size="sm"
+              className="w-full sm:w-auto"
               onClick={handleMarkdownDownload}
             >
               <Download size={16} />
@@ -171,12 +172,13 @@ export default function NoteReaderView() {
             <Button
               variant="subtle"
               size="sm"
+              className="w-full sm:w-auto"
               onClick={() => navigate("/", { state: { note } })}
             >
               <Pencil size={16} />
               Edit Note
             </Button>
-            <Button variant="danger" size="sm" onClick={handleDelete}>
+            <Button variant="danger" size="sm" className="w-full sm:w-auto" onClick={handleDelete}>
               <Trash2 size={16} />
               Delete Note
             </Button>
@@ -191,7 +193,7 @@ export default function NoteReaderView() {
               <span>Markdown Note</span>
             </div>
 
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+            <h1 className="break-words text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
               {note.title}
             </h1>
 
@@ -202,7 +204,7 @@ export default function NoteReaderView() {
           </header>
 
           {/* Rendered HTML Content Container with Dark Mode Invert */}
-          <article className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-10 shadow-sm transition-colors print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none">
+          <article className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-10 shadow-sm transition-colors print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none">
             <div
               className={`${markdownStyles} dark:prose-invert`}
               dangerouslySetInnerHTML={{ __html: note.htmlContent }}

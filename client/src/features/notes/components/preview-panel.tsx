@@ -86,8 +86,8 @@ Upload a markdown file or start typing your notes here!
 
   return (
     <Panel>
-      <PanelHeader>
-        <div className="flex h-full items-center gap-4">
+      <PanelHeader className="h-auto min-h-12 flex-wrap gap-2 py-2">
+        <div className="flex h-full min-w-0 items-center gap-3 sm:gap-4">
           <Button
             variant="unstyled"
             size="none"
@@ -130,7 +130,7 @@ Upload a markdown file or start typing your notes here!
               onCheckGrammar();
             }}
             disabled={checkingGrammar}
-            className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+            className="shrink-0 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
           >
             {checkingGrammar ? "Checking..." : "Check grammar again"}
           </Button>
@@ -139,11 +139,11 @@ Upload a markdown file or start typing your notes here!
 
       {activeTab === "preview" ? (
         <div
-          className="prose prose-slate dark:prose-invert max-w-none flex-1 overflow-y-auto p-6"
+          className="prose prose-slate dark:prose-invert max-w-none flex-1 overflow-auto p-4 sm:p-6"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       ) : (
-        <div className="flex flex-1 flex-col p-6 overflow-y-auto">
+        <div className="flex flex-1 flex-col overflow-y-auto p-4 sm:p-6">
           {grammarResults.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center text-center">
               <div className="mb-4 inline-flex rounded-full bg-indigo-50 dark:bg-indigo-950/50 p-4">
@@ -196,7 +196,7 @@ Upload a markdown file or start typing your notes here!
                 return (
                   <div
                     key={index}
-                    className={`flex items-start justify-between gap-3 rounded-lg border p-4 transition-all ${
+                    className={`flex flex-col gap-3 rounded-lg border p-3 transition-all sm:flex-row sm:items-start sm:justify-between sm:p-4 ${
                       isApplied
                         ? "border-emerald-500/50 bg-emerald-50/10 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300"
                         : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900"
@@ -214,7 +214,7 @@ Upload a markdown file or start typing your notes here!
                           size={18}
                         />
                       )}
-                      <div className="space-y-1">
+                      <div className="min-w-0 space-y-1">
                         <p
                           className={`text-sm font-medium ${isApplied ? "line-through opacity-75" : "text-slate-900 dark:text-white"}`}
                         >
@@ -267,7 +267,7 @@ Upload a markdown file or start typing your notes here!
                     </div>
 
                     {isApplied && (
-                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 sm:whitespace-nowrap">
                         Applied ✓
                       </span>
                     )}

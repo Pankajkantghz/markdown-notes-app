@@ -61,7 +61,7 @@ export function EditorPanel({
         <div
           ref={highlightsRef}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words bg-white p-5 font-mono text-sm leading-7 text-slate-800 dark:bg-slate-900 dark:text-slate-100"
+          className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words bg-white p-4 font-mono text-sm leading-7 text-slate-800 dark:bg-slate-900 dark:text-slate-100 sm:p-5"
         >
           {content ? (
             highlights
@@ -83,7 +83,7 @@ export function EditorPanel({
           }}
           spellCheck={false}
           aria-label="Markdown editor"
-          className="absolute inset-0 h-full min-h-[400px] w-full resize-none overflow-auto bg-transparent p-5 font-mono text-sm leading-7 text-transparent caret-slate-900 outline-none selection:bg-indigo-300/50 dark:caret-white"
+          className="absolute inset-0 h-full min-h-[400px] w-full resize-none overflow-auto bg-transparent p-4 font-mono text-sm leading-7 text-transparent caret-slate-900 outline-none selection:bg-indigo-300/50 dark:caret-white sm:p-5"
         />
       </div>
 

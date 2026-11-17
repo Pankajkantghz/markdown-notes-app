@@ -67,6 +67,7 @@ export default function LoginRoute() {
     const button = buttonRef.current;
     if (!clientId || !button) return;
     let active = true;
+    let resizeButton: (() => void) | undefined;
     credentialHandler = (credential) => {
       if (active) {
         setWorking(true);
@@ -99,15 +100,21 @@ export default function LoginRoute() {
           );
           return;
         }
-        window.google.accounts.id.renderButton(button, {
-          theme: document.documentElement.classList.contains("dark")
-            ? "filled_black"
-            : "outline",
-          size: "large",
-          shape: "pill",
-          text: "continue_with",
-          width: 300,
-        });
+        resizeButton = () => {
+          if (!active) return;
+          button.replaceChildren();
+          window.google!.accounts.id.renderButton(button, {
+            theme: document.documentElement.classList.contains("dark")
+              ? "filled_black"
+              : "outline",
+            size: "large",
+            shape: "pill",
+            text: "continue_with",
+            width: Math.max(120, Math.min(300, button.clientWidth)),
+          });
+        };
+        resizeButton();
+        window.addEventListener("resize", resizeButton);
       })
       .catch(() => {
         if (active) setError("Could not load Google sign-in.");
@@ -115,6 +122,7 @@ export default function LoginRoute() {
     return () => {
       active = false;
       credentialHandler = undefined;
+      if (resizeButton) window.removeEventListener("resize", resizeButton);
       button.replaceChildren();
     };
   }, [signIn]);
@@ -128,8 +136,8 @@ export default function LoginRoute() {
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-5 py-10 text-slate-900 dark:bg-slate-950 dark:text-slate-100 sm:px-8">
       <div className="pointer-events-none absolute -left-36 -top-40 h-[30rem] w-[30rem] rounded-full bg-indigo-200/40 blur-3xl dark:bg-indigo-950/35" />
       <div className="pointer-events-none absolute -bottom-48 -right-32 h-[32rem] w-[32rem] rounded-full bg-violet-200/40 blur-3xl dark:bg-violet-950/25" />
-      <div className="relative grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_30px_100px_-45px_rgba(25,30,48,0.28)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/40 md:grid-cols-[1.05fr_0.95fr]">
-        <section className="relative flex min-h-[32rem] flex-col justify-between overflow-hidden bg-indigo-50 p-8 dark:bg-slate-950 sm:p-12">
+      <div className="relative grid w-full min-w-0 max-w-5xl overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_30px_100px_-45px_rgba(25,30,48,0.28)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/40 sm:rounded-[2rem] md:grid-cols-[1.05fr_0.95fr]">
+        <section className="relative flex min-h-[23rem] min-w-0 flex-col justify-between overflow-hidden bg-indigo-50 p-6 dark:bg-slate-950 sm:min-h-[32rem] sm:p-12">
           <div className="pointer-events-none absolute -bottom-24 -left-20 h-80 w-80 rounded-full border border-indigo-300/50 dark:border-indigo-400/10" />
           <div className="pointer-events-none absolute -bottom-12 -left-8 h-56 w-56 rounded-full border border-indigo-300/50 dark:border-indigo-400/10" />
           <div className="relative">
@@ -141,20 +149,20 @@ export default function LoginRoute() {
                 mireth
               </span>
             </div>
-            <div className="mt-16 max-w-md">
+            <div className="mt-10 max-w-md sm:mt-16">
               <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-white/65 px-3 py-1.5 text-xs font-medium text-indigo-800 dark:border-indigo-400/15 dark:bg-white/5 dark:text-indigo-200">
                 <Sparkles size={13} /> A quieter space to think
               </span>
-              <h1 className="mt-6 text-4xl font-semibold leading-[1.12] tracking-[-0.05em] sm:text-5xl">
+              <h1 className="mt-5 text-3xl font-semibold leading-[1.12] tracking-[-0.05em] sm:mt-6 sm:text-5xl">
                 Give your thoughts a place to grow.
               </h1>
-              <p className="mt-5 max-w-sm text-base leading-7 text-slate-600 dark:text-slate-300">
+              <p className="mt-4 max-w-sm text-sm leading-6 text-slate-600 dark:text-slate-300 sm:mt-5 sm:text-base sm:leading-7">
                 Write without distraction. Refine every thought. Keep what
                 matters.
               </p>
             </div>
           </div>
-          <div className="relative mt-14 flex items-center gap-3 border-t border-indigo-200/80 pt-5 text-xs font-medium uppercase tracking-[0.16em] text-slate-500 dark:border-indigo-300/10 dark:text-slate-400">
+          <div className="relative mt-8 flex items-center gap-2 border-t border-indigo-200/80 pt-5 text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500 dark:border-indigo-300/10 dark:text-slate-400 sm:mt-14 sm:gap-3 sm:text-xs sm:tracking-[0.16em]">
             <span>Write</span>
             <span className="h-px flex-1 bg-indigo-300/70 dark:bg-indigo-300/15" />
             <span>Refine</span>
@@ -163,7 +171,7 @@ export default function LoginRoute() {
           </div>
         </section>
 
-        <section className="flex min-h-[32rem] flex-col justify-center p-8 sm:p-12">
+        <section className="flex min-w-0 flex-col justify-center p-6 sm:min-h-[32rem] sm:p-12">
           <div className="mx-auto w-full max-w-sm">
             <div className="mb-8 grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-indigo-600 dark:bg-slate-800 dark:text-indigo-300">
               <Feather size={21} />
@@ -178,10 +186,10 @@ export default function LoginRoute() {
               Sign in to pick up where your ideas left off.
             </p>
 
-            <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-900/50">
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-900/50 sm:mt-8">
               {import.meta.env.VITE_GOOGLE_CLIENT_ID ? (
                 <div
-                  className={`flex min-h-11 justify-center transition-opacity ${working ? "pointer-events-none opacity-60" : ""}`}
+                  className={`flex min-h-11 min-w-0 justify-center overflow-hidden transition-opacity ${working ? "pointer-events-none opacity-60" : ""}`}
                   ref={buttonRef}
                 />
               ) : (

@@ -29,6 +29,7 @@ export function WorkspaceHeader({
           />
           <Button
             variant="secondary"
+            className="w-full sm:w-auto"
             onClick={() => fileInputRef.current?.click()}
           >
             <Upload size={16} /> Upload Markdown
