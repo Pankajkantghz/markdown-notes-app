@@ -8,13 +8,14 @@
     "start": "node dist/app.js",
     "db:migrate": "prisma db migrate",
     "db:check": "prisma migration check",
+    "test": "node --import tsx --test src/utils/markdown.test.ts",
     "seed": "tsx src/prisma/seed.ts",
     "contract:emit": "prisma contract emit"
   },
   "license": "ISC",
   "packageManager": "pnpm@10.32.1",
   "dependencies": {
-    "@prisma/orm-postgres": "8.0.0-rc.23",
+    "@prisma/orm-postgres": "8.0.0-rc.24",
     "axios": "^1.21.0",
     "cors": "^2.8.6",
     "dotenv": "^18.0.9",
@@ -25,13 +26,13 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "@prisma/cli-engine": "0.9.0",
+    "@prisma/cli-engine": "0.10.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.6",
     "@types/pg": "^8.20.4",
     "@types/swagger-ui-express": "^4.1.8",
-    "prisma": "8.0.0-rc.33",
+    "prisma": "8.0.0-rc.34",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },

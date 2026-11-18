@@ -180,7 +180,7 @@ pnpm build
 
 The repository includes production-oriented session cookies, database-backed rate limits, strict origin checks, readiness probes, graceful shutdown, and structured request logs. Deployment still depends on the operator's infrastructure and must be verified before public launch.
 
-GitHub Actions runs client lint/build, server build, and migration integrity checks for pushes and pull requests.
+GitHub Actions runs client lint/build, server tests/build, and migration integrity checks for pushes and pull requests. Run the server unit tests locally with `cd server && pnpm test`.
 
 Connect the GitHub repository to Vercel for the client and Render for the API, and enable deploys from the chosen production branch. Keep deployments behind the CI checks and set each provider's build, start, and environment settings from its dashboard. Neon hosts PostgreSQL; use its pooled runtime URL for the API and a migration-capable URL for release migrations. Configure the exact deployed frontend origin in both Google OAuth and the API's `CLIENT_ORIGINS`.
 
@@ -202,7 +202,7 @@ Mireth uses Google to sign you in and stores your notes and account data in its 
 
 Ideas for extending the learning project:
 
-- Add automated API and UI tests for note creation, updates, deletion, grammar suggestions, and Markdown rendering.
+- Add API and UI integration tests for note ownership, CRUD operations, grammar suggestions, and Markdown rendering.
 - Add a dedicated multipart upload endpoint if files need to be uploaded directly to the API.
 - Add automated API and browser end-to-end checks for authentication, account isolation, and production cookie behavior.
 - Add a documented deployment pipeline and backup restore runbook for the chosen hosting provider.
