@@ -104,11 +104,9 @@ export default function LoginRoute() {
           if (!active) return;
           button.replaceChildren();
           window.google!.accounts.id.renderButton(button, {
-            theme: document.documentElement.classList.contains("dark")
-              ? "filled_black"
-              : "outline",
+            theme: "outline",
             size: "large",
-            shape: "pill",
+            shape: "rectangular",
             text: "continue_with",
             width: Math.max(120, Math.min(300, button.clientWidth)),
           });
