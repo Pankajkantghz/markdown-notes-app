@@ -11,29 +11,22 @@ The app opens to Google sign-in. After signing in, users can create and manage t
 ## Architecture
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 60, "rankSpacing": 90, "diagramPadding": 24}, "themeVariables": {"fontSize": "18px"}}}%%
 flowchart LR
-  User --> Login[React login page]
-  Login -->|ID credential| GIS[Google Identity Services]
-  GIS -->|Credential| Auth[Express auth routes]
-  Auth -->|Verify credential| Google[Google identity verification]
-  Auth -->|Create or revoke session| DB[(PostgreSQL)]
-  Auth -->|HTTP-only session cookie| Client[React application]
-  User --> Router[React Router and auth provider]
-  Client --> Router
-  Router --> Pages[Home, library, note reader]
-  Pages --> Feature[Notes feature: UI, API, types]
-  Feature -->|JSON + session cookie| API[Express API]
-  API --> Middleware[Origin, session, and rate-limit middleware]
-  Middleware --> Routes[Auth and note routes]
-  Routes --> Controllers[Controllers]
-  Controllers --> Services[Note and session services]
-  Services -->|Users, sessions, owned notes, rate limits| DB
-  Services -->|Grammar text + server API key| Sapling[Sapling grammar API]
-  Services -->|Render saved Markdown| HTML[Safe HTML response]
-  HTML --> Pages
-  Pages -->|Read selected .md/.txt locally| Pages
-  API --> Health[Health endpoints]
-  API --> Docs[OpenAPI + Swagger UI]
+  User[User] -->|Write, list, or open notes| Client[Browser: React app]
+  Client -->|HTTPS request + session cookie| API[Express API]
+  Client -->|Sign in| GIS[Google Identity Services]
+  GIS -->|Google ID credential| Client
+  API -->|Verify sign-in credential| Google[Google identity service]
+  Google -->|Verified identity| API
+  API -->|Validate session and note ownership| Services[Auth, note, and grammar services]
+  Services -->|Read or write users, sessions, and notes| DB[(PostgreSQL)]
+  DB -->|Stored records| Services
+  Services -->|Grammar text| Sapling[Sapling grammar API]
+  Sapling -->|Suggestions| Services
+  Services -->|Result| API
+  API -->|JSON or rendered HTML + session cookie| Client
+  Client -->|Display notes and results| User
 ```
 
 The client contains the branded, theme-aware Google sign-in page, editor, Markdown preview, grammar suggestions, library, and note reader. Google Identity Services returns an ID credential to the client, which exchanges it with the API for a revocable HTTP-only session cookie. Authenticated note requests use that cookie; the API scopes reads and writes to the signed-in user. PostgreSQL stores users, sessions, owned notes, and shared rate-limit counters. For grammar checks, the server sends text to Sapling using a server-side API key. The API safely renders saved Markdown for the reader, while the live client preview sanitizes rendered HTML with DOMPurify. File selection stays in the browser before note text is sent to the API.
