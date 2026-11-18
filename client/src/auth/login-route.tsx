@@ -151,7 +151,7 @@ export default function LoginRoute() {
               <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-white/65 px-3 py-1.5 text-xs font-medium text-indigo-800 dark:border-indigo-400/15 dark:bg-white/5 dark:text-indigo-200">
                 <Sparkles size={13} /> A quieter space to think
               </span>
-              <h1 className="mt-5 text-3xl font-semibold leading-[1.12] tracking-[-0.05em] sm:mt-6 sm:text-5xl">
+              <h1 className="mt-5 text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.04em] sm:mt-6 sm:text-[2.5rem]">
                 Give your thoughts a place to grow.
               </h1>
               <p className="mt-4 max-w-sm text-sm leading-6 text-slate-600 dark:text-slate-300 sm:mt-5 sm:text-base sm:leading-7">
