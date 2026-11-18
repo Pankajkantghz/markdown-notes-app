@@ -188,10 +188,12 @@ export default function LoginRoute() {
 
             <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-900/50 sm:mt-8">
               {import.meta.env.VITE_GOOGLE_CLIENT_ID ? (
-                <div
-                  className={`flex min-h-11 min-w-0 justify-center overflow-hidden transition-opacity ${working ? "pointer-events-none opacity-60" : ""}`}
-                  ref={buttonRef}
-                />
+                <div className="mx-auto w-full max-w-[320px] overflow-hidden rounded-xl bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:bg-white dark:ring-slate-300">
+                  <div
+                    className={`flex min-h-11 min-w-0 justify-center overflow-hidden rounded-lg transition-opacity ${working ? "pointer-events-none opacity-60" : ""}`}
+                    ref={buttonRef}
+                  />
+                </div>
               ) : (
                 <p className="px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
                   Set VITE_GOOGLE_CLIENT_ID in client/.env to enable sign-in.
